@@ -4,10 +4,10 @@
  * SWR stores `useSWRInfinite` and `useSWRSubscription` entries under
  * prefixed keys, so the panel can label them.
  */
-export type KeyKind = "standard" | "infinite" | "subscription";
+export type KeyKind = 'standard' | 'infinite' | 'subscription';
 
 export function getKeyKind(key: string): KeyKind {
-  if (key.startsWith("$inf$")) return "infinite";
-  if (key.startsWith("$sub$")) return "subscription";
-  return "standard";
+  if (key.startsWith('$inf$')) return 'infinite';
+  if (key.startsWith('$sub$')) return 'subscription';
+  return 'standard';
 }
