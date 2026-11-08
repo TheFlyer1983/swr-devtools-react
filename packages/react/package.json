@@ -1,0 +1,44 @@
+{
+  "name": "swr-devtools-react",
+  "version": "0.0.0",
+  "description": "In-app devtools panel for SWR: inspect, revalidate, edit and delete cache keys.",
+  "keywords": [
+    "cache",
+    "debug",
+    "devtools",
+    "react",
+    "swr"
+  ],
+  "homepage": "https://github.com/TheFlyer1983/swr-devtools-react#readme",
+  "bugs": "https://github.com/TheFlyer1983/swr-devtools-react/issues",
+  "license": "MIT",
+  "author": "Paul Livingstone",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheFlyer1983/swr-devtools-react.git",
+    "directory": "packages/react"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "devDependencies": {
+    "@swr-devtools-react/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "swr": "^2.0.0"
+  }
+}
