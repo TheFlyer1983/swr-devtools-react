@@ -6,7 +6,7 @@ In-app devtools for [SWR](https://swr.vercel.app): see every cache key, then rev
 
 ## Development
 
-Requires Node 22.18+ and Corepack (`corepack enable`), which provides the pinned pnpm version.
+Requires Node 24.11+ (see `.node-version`) and Corepack (`corepack enable`), which provides the pinned pnpm version.
 
 ```bash
 pnpm install
