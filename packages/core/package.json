@@ -1,0 +1,20 @@
+{
+  "name": "@swr-devtools-react/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Framework-free logic for reading and acting on the SWR cache. Internal; bundled into swr-devtools-react.",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "peerDependencies": {
+    "swr": "^2.0.0"
+  }
+}

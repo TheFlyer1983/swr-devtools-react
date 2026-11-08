@@ -28,14 +28,14 @@ Developers building React apps with SWR v2, in Vite/React or Next.js (App Router
 
 ## 4. Decisions
 
-| Decision | Choice | Notes |
-|---|---|---|
-| SWR support | v2 only | |
-| Delivery | Standalone first | The panel is the product. TanStack Devtools and Vite DevTools are thin adapters added later. |
-| Styling | Plain CSS inside a Shadow DOM | No runtime deps. Host styles can't leak in or out. Design tokens are CSS variables so a later switch to Tailwind is mechanical. Tailwind v4 needs a Shadow DOM workaround, so revisit then. |
-| Next.js | First-class in MVP | `'use client'` entry, tested in a Next.js playground |
-| Licence | MIT | |
-| Repo / npm name | `swr-devtools-react` | Check npm availability before first publish. |
+| Decision        | Choice                        | Notes                                                                                                                                                                                       |
+| --------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SWR support     | v2 only                       |                                                                                                                                                                                             |
+| Delivery        | Standalone first              | The panel is the product. TanStack Devtools and Vite DevTools are thin adapters added later.                                                                                                |
+| Styling         | Plain CSS inside a Shadow DOM | No runtime deps. Host styles can't leak in or out. Design tokens are CSS variables so a later switch to Tailwind is mechanical. Tailwind v4 needs a Shadow DOM workaround, so revisit then. |
+| Next.js         | First-class in MVP            | `'use client'` entry, tested in a Next.js playground                                                                                                                                        |
+| Licence         | MIT                           |                                                                                                                                                                                             |
+| Repo / npm name | `swr-devtools-react`          | Check npm availability before first publish.                                                                                                                                                |
 
 ## 5. Package structure
 
@@ -54,6 +54,7 @@ docs/
 ## 6. MVP (v0.1) features
 
 ### 6.1 Floating toggle and panel
+
 - A floating button opens and closes the panel. Open/closed state persists across reloads.
 - Configurable button corner and panel dock position (bottom or right).
 - Resizable panel.
@@ -62,6 +63,7 @@ docs/
 **Done when:** the panel opens and closes in both playgrounds, and its styles are unaffected by an aggressive global CSS reset in the host app.
 
 ### 6.2 Cache key list
+
 - Lists every key in the SWR cache.
 - Status badge per key: loading, validating, success, error. Colours are designed for SWR's states, not copied from TanStack.
 - Shows time since the data last changed.
@@ -72,13 +74,16 @@ docs/
 **Done when:** keys appear, change status and disappear in the panel as the playground app fetches, errors and unmounts.
 
 ### 6.3 Search and sort
+
 - Filter keys by text.
 - Sort by key, status or last updated.
 
 ### 6.4 Key detail view
+
 - Selecting a key shows its full key, status, error (if any) and data as a collapsible JSON tree.
 
 ### 6.5 Actions
+
 - **Revalidate** a key (`mutate(key)`)
 - **Delete** a key from the cache; mounted hooks are notified.
 - **Clear all**, behind a confirmation.
@@ -87,6 +92,7 @@ docs/
 **Done when:** each action visibly affects the playground UI as expected.
 
 ### 6.6 Production safety
+
 - By default, `<SWRDevtools />` renders nothing when `process.env.NODE_ENV === 'production'`, and the import is tree-shaken out.
 - Documented opt-in for forcing it on (e.g. staging).
 
@@ -95,12 +101,14 @@ docs/
 ## 7. Later milestones
 
 **v0.2**
+
 - TanStack Devtools plugin (`packages/tanstack`)
 - Observer count per key (via middleware)
 - Trigger loading / trigger error states (needs a spike to confirm hooks re-render correctly)
 - Light/dark theme following system preference
 
 **v0.3+**
+
 - Mutations tab (`useSWRMutation`)
 - Simulate offline
 - Vite DevTools adapter
