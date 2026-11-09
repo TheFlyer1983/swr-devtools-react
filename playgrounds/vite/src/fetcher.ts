@@ -42,10 +42,32 @@ function toUrl(key: PlaygroundKey): string {
  * e.g. useSWR<User>('/api/user'), so this returns `unknown`.
  */
 export async function fetcher(key: PlaygroundKey): Promise<unknown> {
-  const res = await fetch(toUrl(key));
-  const body: unknown = await res.json();
+  const url = toUrl(key);
+  const res = await fetch(url);
   if (!res.ok) {
-    throw new FetchError(`Request failed with ${res.status}`, res.status, body);
+    // Error bodies aren't always JSON (e.g. an HTML error page from a proxy),
+    // so never let a parse failure hide the HTTP status.
+    const info = await res.text().then(parseJsonOrText);
+    throw new FetchError(`Request failed with ${res.status}`, res.status, info);
   }
+  // Vite answers unknown paths with 200 + index.html, so a mistyped URL
+  // "succeeds". Say so plainly instead of failing with a JSON SyntaxError.
+  const type = res.headers.get('content-type') ?? '';
+  if (!type.includes('application/json')) {
+    throw new FetchError(
+      `Expected JSON from ${url}, got ${type || 'no content type'}`,
+      res.status,
+      await res.text()
+    );
+  }
+  const body: unknown = await res.json();
   return body;
+}
+
+function parseJsonOrText(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return text;
+  }
 }

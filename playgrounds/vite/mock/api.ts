@@ -8,6 +8,7 @@ import type { Plugin } from 'vite';
 
 type Handler = (url: URL) => { status?: number; delay?: number; body: unknown };
 
+const SLOW_DELAY_MS = 2000;
 const FEED_PAGE_SIZE = 5;
 const FEED_PAGES = 4;
 
@@ -18,13 +19,10 @@ const routes: Record<string, Handler> = {
   }),
 
   // Slow success, so loading and validating states stay visible
-  '/api/slow': (url) => {
-    const delay = Number(url.searchParams.get('delay') ?? 2000);
-    return {
-      delay,
-      body: { message: `Answered after ${delay}ms`, servedAt: new Date().toISOString() }
-    };
-  },
+  '/api/slow': () => ({
+    delay: SLOW_DELAY_MS,
+    body: { message: `Answered after ${SLOW_DELAY_MS}ms`, servedAt: new Date().toISOString() }
+  }),
 
   // Always fails
   '/api/error': () => ({
