@@ -17,6 +17,7 @@ pnpm check   # lint, format check, typecheck, test, build
 
 | Script                         | What it does                              |
 | ------------------------------ | ----------------------------------------- |
+| `pnpm dev`                     | Vite playground at http://localhost:5173  |
 | `pnpm lint`                    | oxlint                                    |
 | `pnpm format` / `format:check` | oxfmt                                     |
 | `pnpm typecheck`               | `tsc --noEmit` in every package           |

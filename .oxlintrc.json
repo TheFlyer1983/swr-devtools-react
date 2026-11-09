@@ -18,7 +18,7 @@
   "ignorePatterns": ["**/dist/**", "**/coverage/**"],
   "overrides": [
     {
-      "files": ["**/vitest.setup.ts"],
+      "files": ["**/vitest.setup.ts", "playgrounds/*/src/main.tsx"],
       "rules": {
         "import/no-unassigned-import": "off"
       }
