@@ -1,5 +1,7 @@
 # swr-devtools-react
 
+[![CI](https://github.com/TheFlyer1983/swr-devtools-react/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/TheFlyer1983/swr-devtools-react/actions/workflows/ci.yml)
+
 In-app devtools for [SWR](https://swr.vercel.app): see every cache key, then revalidate, edit or delete it from a floating panel, the way TanStack Query Devtools works.
 
 > **Work in progress.** Nothing is published yet. See the [spec](docs/SPEC.md) and the [project board](https://github.com/users/TheFlyer1983/projects/7) for what's planned.
