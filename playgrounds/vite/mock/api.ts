@@ -72,24 +72,31 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
+function handleMockRequest(req: IncomingMessage, res: ServerResponse, next: () => void) {
+  const url = new URL(req.url ?? '/', 'http://localhost');
+  const handler = routes[url.pathname];
+  if (!handler) {
+    if (url.pathname.startsWith('/api/')) {
+      send(res, 404, { error: `No mock for ${url.pathname}` });
+      return;
+    }
+    next();
+    return;
+  }
+  const { status = 200, delay = 0, body } = handler(url);
+  setTimeout(() => send(res, status, body), delay);
+}
+
 export function mockApi(): Plugin {
   return {
     name: 'playground-mock-api',
+    // `vite` (dev server)
     configureServer(server) {
-      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
-        const url = new URL(req.url ?? '/', 'http://localhost');
-        const handler = routes[url.pathname];
-        if (!handler) {
-          if (url.pathname.startsWith('/api/')) {
-            send(res, 404, { error: `No mock for ${url.pathname}` });
-            return;
-          }
-          next();
-          return;
-        }
-        const { status = 200, delay = 0, body } = handler(url);
-        setTimeout(() => send(res, status, body), delay);
-      });
+      server.middlewares.use(handleMockRequest);
+    },
+    // `vite preview` (serves the production build)
+    configurePreviewServer(server) {
+      server.middlewares.use(handleMockRequest);
     }
   };
 }
