@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // App code, not a library: no declaration output, so no explicit return types needed.
+    "declaration": false,
+    "isolatedDeclarations": false,
+    "types": ["vite/client", "node"],
+    // Resolve the package to its source, matching the alias in vite.config.ts,
+    // so typechecking doesn't depend on `pnpm build` having run first.
+    "paths": {
+      "swr-devtools-react": ["../../packages/react/src/index.ts"]
+    }
+  },
+  "include": ["src", "mock", "vite.config.ts"]
+}
