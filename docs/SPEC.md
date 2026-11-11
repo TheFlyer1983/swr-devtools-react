@@ -1,6 +1,6 @@
 # swr-devtools-react: Specification
 
-Status: draft · Last updated: 2026-11-08
+Status: draft · Last updated: 2026-11-11
 
 ## 1. Problem
 
@@ -28,14 +28,15 @@ Developers building React apps with SWR v2, in Vite/React or Next.js (App Router
 
 ## 4. Decisions
 
-| Decision        | Choice                        | Notes                                                                                                                                                                                       |
-| --------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SWR support     | v2 only                       |                                                                                                                                                                                             |
-| Delivery        | Standalone first              | The panel is the product. TanStack Devtools and Vite DevTools are thin adapters added later.                                                                                                |
-| Styling         | Plain CSS inside a Shadow DOM | No runtime deps. Host styles can't leak in or out. Design tokens are CSS variables so a later switch to Tailwind is mechanical. Tailwind v4 needs a Shadow DOM workaround, so revisit then. |
-| Next.js         | First-class in MVP            | `'use client'` entry, tested in a Next.js playground                                                                                                                                        |
-| Licence         | MIT                           |                                                                                                                                                                                             |
-| Repo / npm name | `swr-devtools-react`          | Check npm availability before first publish.                                                                                                                                                |
+| Decision           | Choice                                                               | Notes                                                                                                                                                                                              |
+| ------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SWR support        | v2 only                                                              |                                                                                                                                                                                                    |
+| Delivery           | Standalone first                                                     | The panel is the product. TanStack Devtools and Vite DevTools are thin adapters added later.                                                                                                       |
+| Styling            | Plain CSS inside a Shadow DOM                                        | No runtime deps. Host styles can't leak in or out. Design tokens are CSS variables so a later switch to Tailwind is mechanical. Tailwind v4 needs a Shadow DOM workaround, so revisit then.        |
+| Next.js            | First-class in MVP                                                   | `'use client'` entry, tested in a Next.js playground                                                                                                                                               |
+| Licence            | MIT                                                                  |                                                                                                                                                                                                    |
+| Repo / npm name    | `swr-devtools-react`                                                 | Check npm availability before first publish.                                                                                                                                                       |
+| Live cache updates | Wrap `set`/`delete` on the existing cache object; poll as a fallback | No user setup. Avoids a custom `provider`, which crashes under StrictMode with infinite/subscription hooks (vercel/swr#2771). See [docs/spikes/cache-observation.md](spikes/cache-observation.md). |
 
 ## 5. Package structure
 
@@ -71,7 +72,7 @@ docs/
 - `useSWRInfinite` (`$inf$`) and `useSWRSubscription` (`$sub$`) keys are labelled as such.
 - The list updates live as the cache changes, with no manual refresh.
 
-**Done when:** keys appear, change status and disappear in the panel as the playground app fetches, errors and unmounts.
+**Done when:** keys appear and change status in the panel as the playground app fetches, revalidates and errors. SWR keeps keys in the cache after their components unmount, so keys stay listed; marking unused keys comes with observer counts (v0.2).
 
 ### 6.3 Search and sort
 
@@ -85,7 +86,7 @@ docs/
 ### 6.5 Actions
 
 - **Revalidate** a key (`mutate(key)`)
-- **Delete** a key from the cache; mounted hooks are notified.
+- **Delete** a key from the cache; mounted hooks are notified. `cache.delete` alone doesn't notify them (see the cache-observation spike).
 - **Clear all**, behind a confirmation.
 - **Edit data**: edit the JSON and apply it with `mutate(key, data, { revalidate: false })`. Invalid JSON is rejected with a clear message.
 
@@ -126,7 +127,7 @@ docs/
 
 ## 9. Open questions
 
-1. **Live updates:** how to observe cache changes. Options are wrapping the cache via SWR's `provider` option, or polling `cache.keys()`. Needs a spike. Wrapping is cleaner but requires users to pass something into `SWRConfig`.
-2. **Setup API:** can `<SWRDevtools />` work just by being placed inside `<SWRConfig>`, or does it need a provider/middleware the user adds? Aim for one line of setup.
+1. ~~**Live updates:** how to observe cache changes.~~ **Resolved (#5):** wrap `set`/`delete` on the existing cache object, with polling as a fallback. See §4 and [docs/spikes/cache-observation.md](spikes/cache-observation.md).
+2. **Setup API:** can `<SWRDevtools />` work just by being placed inside `<SWRConfig>`, or does it need a provider/middleware the user adds? Aim for one line of setup. _Partly answered by #5: live updates need no setup. Still open: whether observer counts (v0.2) justify asking for middleware._
 3. **Multiple SWR caches:** apps with more than one `SWRConfig` provider. Support in MVP or later?
 4. **Edit-data UX:** raw JSON textarea for MVP, or a proper inline JSON editor?
