@@ -54,7 +54,7 @@ StrictMode's dev-only unmount/remount makes `<SWRConfig>` drop its provider's gl
 Notes for the implementation (#8):
 
 - **Install it in `core`, not in a React hook.** oxlint's `react(immutability)` rule rejects mutating an object returned by `useSWRConfig()`, and the logic belongs in `core` anyway: `observeCache(cache, listener) → unsubscribe`.
-- **Install early and read a snapshot.** In the spike, E was installed ~11ms after the first writes and missed the initial `loading` transitions. The panel should read the current entries on install, then follow changes. Installing during render, not in an effect, also gets it in before child hooks' effects run.
+- **Install in the commit phase, then read a snapshot.** Subscribe from `useSyncExternalStore` (or a layout effect), never during render: React can discard a render without running cleanup, which would leave the patch and listener on the cache. In the spike, E was installed ~11ms after the first writes and missed the initial `loading` transitions. That's acceptable for the MVP: the key list shows each key's current state, which the snapshot taken on install gives correctly, and every later write is seen. A transition history (not planned for v0.1) would need the patch installed before the app's hooks run, e.g. by an explicit setup call, and is out of scope here.
 - **Make it idempotent and restorable.** One patch per cache object, shared by any number of listeners, removed when the last listener unsubscribes. That avoids C's double-patching under StrictMode.
 - **Fall back to polling** if the patch can't be installed (e.g. a frozen custom cache), and say so in the panel.
 

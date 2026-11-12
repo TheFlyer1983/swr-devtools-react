@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-GB
+reviews:
+  profile: chill
+  path_filters:
+    - '!pnpm-lock.yaml'
+  path_instructions:
+    - path: '**'
+      instructions: >-
+        docs/SPEC.md is the source of truth for scope and decisions. Flag changes
+        that contradict it, rather than suggesting features it leaves out.
+  pre_merge_checks:
+    # The codebase documents intent with comments where it's non-obvious, not
+    # docstrings on every function. CodeRabbit's schema marks this check as
+    # retired, but PRs still show it, so turn it off explicitly.
+    docstrings:
+      mode: 'off'
