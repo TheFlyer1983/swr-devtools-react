@@ -1,5 +1,20 @@
 const PREFIXES = ['$inf$', '$sub$'];
 
+/** Values `stableHash` writes without quotes that can be decoded for certain. */
+const TOKENS = [
+  String.raw`-?\d+(\.\d+)?(e[+-]\d+)?`, // numbers and bigints
+  'NaN|-?Infinity',
+  'true|false|null|undefined',
+  String.raw`[+-]?\d{4,6}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z` // Date#toJSON
+];
+const TOKEN = new RegExp(`^(?:${TOKENS.join('|')})$`);
+
+const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
+
+function formatName(name: string): string {
+  return IDENTIFIER.test(name) ? name : JSON.stringify(name);
+}
+
 /**
  * Turns an SWR cache key into something readable for the panel.
  *
@@ -7,8 +22,11 @@ const PREFIXES = ['$inf$', '$sub$'];
  * with its internal `stableHash`: `["/api/posts", 2]` becomes
  * `@"/api/posts",2,` and `{ url, q }` becomes `#url:"/api/search",q:"ap",`.
  * This reverses that format for display. Infinite and subscription prefixes
- * are dropped (the panel shows the kind separately). Anything that doesn't
- * parse completely is returned unchanged.
+ * are dropped (the panel shows the kind separately).
+ *
+ * The format isn't designed to be parsed, so the decoder only accepts values
+ * it can recognise for certain. A key containing anything else (a regex, a
+ * symbol, a Map or class instance) is shown raw rather than guessed at.
  */
 export function formatKey(key: string): string {
   const prefix = PREFIXES.find((p) => key.startsWith(p));
@@ -29,7 +47,10 @@ export function formatKey(key: string): string {
  *   array  = "@" (value ",")*
  *   object = "#" (name ":" value ",")*
  *   string = a JSON string
- *   token  = anything up to the next comma (numbers, booleans, null, dates…)
+ *   token  = a number, boolean, null, undefined or ISO date, up to the next comma
+ *
+ * Property names aren't escaped and may contain ":", so `#x:y:1,` is tried
+ * as name "x" (value "y:1", not a valid token) and then name "x:y" (value 1).
  */
 class Parser {
   private pos = 0;
@@ -64,17 +85,29 @@ class Parser {
     this.pos++;
     const properties: string[] = [];
     while (!this.done() && this.input[this.pos] !== ',') {
-      const colon = this.input.indexOf(':', this.pos);
-      if (colon === -1) return undefined;
-      const name = this.input.slice(this.pos, colon);
-      this.pos = colon + 1;
-      const value = this.value();
-      if (value === undefined || !this.consume(',')) return undefined;
-      properties.push(`${name}: ${value}`);
+      const property = this.property();
+      if (property === undefined) return undefined;
+      properties.push(property);
     }
     // stableHash writes properties in reverse alphabetical order.
     properties.reverse();
     return properties.length ? `{ ${properties.join(', ')} }` : '{}';
+  }
+
+  /** One `name:value,`, trying each colon in turn as the separator. */
+  private property(): string | undefined {
+    const start = this.pos;
+    let colon = this.input.indexOf(':', start);
+    while (colon !== -1) {
+      this.pos = colon + 1;
+      const value = this.value();
+      if (value !== undefined && this.consume(',')) {
+        return `${formatName(this.input.slice(start, colon))}: ${value}`;
+      }
+      colon = this.input.indexOf(':', colon + 1);
+    }
+    this.pos = start;
+    return undefined;
   }
 
   private string(): string | undefined {
@@ -92,8 +125,8 @@ class Parser {
   private token(): string | undefined {
     const comma = this.input.indexOf(',', this.pos);
     const end = comma === -1 ? this.input.length : comma;
-    if (end === this.pos) return undefined;
     const text = this.input.slice(this.pos, end);
+    if (!TOKEN.test(text)) return undefined;
     this.pos = end;
     return text;
   }

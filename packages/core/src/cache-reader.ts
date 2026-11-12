@@ -1,4 +1,4 @@
-import type { Cache, State } from 'swr';
+import type { Cache } from 'swr';
 import { formatKey } from './format-key.ts';
 import { getKeyKind, type KeyKind } from './key-kind.ts';
 import { getStatus, type KeyStatus } from './status.ts';
@@ -15,7 +15,7 @@ export interface CacheEntry {
   error: unknown;
   isLoading: boolean;
   isValidating: boolean;
-  /** When the reader first saw this version of the entry (ms since epoch). */
+  /** When the reader first saw the current data or error (ms since epoch). */
   updatedAt: number;
 }
 
@@ -27,13 +27,15 @@ export interface CacheReader {
 /**
  * Creates a reader that turns an SWR cache into a list of entries.
  *
- * SWR doesn't record when an entry changed, so the reader remembers each
- * entry object it has seen. SWR replaces the object on every write, so a new
- * object means the key was updated at `now`. Call `read` whenever the cache
- * changes (see the cache-observation spike) to keep timestamps accurate.
+ * SWR doesn't record when data changed, so the reader remembers the `data`
+ * and `error` objects it last saw per key. Request-state writes (e.g.
+ * `isValidating`) keep the same `data` object, and SWR also keeps it when a
+ * refetch returns equal data, so a different object means the data really
+ * changed at `now`. Call `read` whenever the cache changes (see the
+ * cache-observation spike) to keep timestamps accurate.
  */
 export function createCacheReader(): CacheReader {
-  const seen = new Map<string, { state: State; updatedAt: number }>();
+  const seen = new Map<string, { data: unknown; error: unknown; updatedAt: number }>();
 
   return {
     read(cache, now = Date.now()) {
@@ -46,8 +48,8 @@ export function createCacheReader(): CacheReader {
         present.add(key);
 
         let record = seen.get(key);
-        if (record?.state !== state) {
-          record = { state, updatedAt: now };
+        if (!record || record.data !== state.data || record.error !== state.error) {
+          record = { data: state.data, error: state.error, updatedAt: now };
           seen.set(key, record);
         }
 

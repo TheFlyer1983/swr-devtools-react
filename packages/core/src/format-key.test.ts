@@ -42,6 +42,25 @@ describe('formatKey', () => {
     expect(formatKey('$sub$ticker')).toBe('ticker');
   });
 
+  it('handles property names that contain a colon', () => {
+    expect(formatKey(serialize({ 'x:y': 1 }))).toBe('{ "x:y": 1 }');
+    expect(formatKey(serialize({ 'a:b': { c: 'd' }, e: 2 }))).toBe('{ "a:b": { c: "d" }, e: 2 }');
+  });
+
+  it('formats numbers, booleans, null and undefined', () => {
+    expect(formatKey(serialize([-1.5, 1e21, NaN, false, undefined]))).toBe(
+      '[-1.5, 1e+21, NaN, false, undefined]'
+    );
+  });
+
+  it('shows the raw key when a value cannot be decoded reliably', () => {
+    // A regex can contain commas, and other objects hash to an opaque id.
+    expect(formatKey(serialize(['/api', /a,b/]))).toBe('@"/api",/a,b/,');
+    expect(formatKey(serialize(['/api', Symbol('q')]))).toBe('@"/api",Symbol(q),');
+    const mapKey = serialize(['/api', new Map()]);
+    expect(formatKey(mapKey)).toBe(mapKey);
+  });
+
   it('falls back to the raw key when it is not a serialised array or object', () => {
     expect(formatKey('#not-an-object')).toBe('#not-an-object');
     expect(formatKey('@"unterminated')).toBe('@"unterminated');
