@@ -26,6 +26,7 @@ export function SWRDevtools({ initialIsOpen = false }: SWRDevtoolsProps): ReactE
       <p>
         SWR Devtools: {entries.length} keys ({store.getMode()}){' '}
         <button
+          type="button"
           onClick={() => {
             // The spec puts Clear all behind a confirmation. The panel (#15)
             // replaces this with its own dialog.
@@ -53,8 +54,12 @@ export function SWRDevtools({ initialIsOpen = false }: SWRDevtoolsProps): ReactE
               <td>{entry.status}</td>
               <td>{formatAge(now - entry.updatedAt)}</td>
               <td>
-                <button onClick={() => void actions.revalidate(entry.key)}>Revalidate</button>{' '}
-                <button onClick={() => void actions.remove(entry.key)}>Delete</button>
+                <button type="button" onClick={() => void actions.revalidate(entry.key)}>
+                  Revalidate
+                </button>{' '}
+                <button type="button" onClick={() => void actions.remove(entry.key)}>
+                  Delete
+                </button>
               </td>
             </tr>
           ))}

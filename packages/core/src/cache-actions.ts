@@ -1,4 +1,4 @@
-import type { Cache, ScopedMutator, Unloader } from 'swr';
+import type { Cache, ScopedMutator } from 'swr';
 
 /** What the panel can do to a key. Keys are raw cache keys from the reader. */
 export interface CacheActions {
@@ -13,7 +13,8 @@ export interface CacheActions {
   remove: (key: string) => Promise<void>;
   /**
    * Removes every key, including infinite and subscription keys, without
-   * refetching. Also drops data kept by `keepPreviousData`.
+   * refetching. On SWR 2.5+, which has `unload`, it also drops data kept by
+   * `keepPreviousData`. Older versions have the same limit as `remove`.
    */
   clearAll: () => Promise<void>;
   /** Replaces the key's data without refetching. */
@@ -24,8 +25,11 @@ export interface CacheActions {
 export interface CacheActionsConfig {
   cache: Cache;
   mutate: ScopedMutator;
-  /** SWR's cache-bound `unload`. Older SWR versions don't have it. */
-  unload?: Unloader;
+  /**
+   * SWR's cache-bound `unload`, added in SWR 2.5. Typed here rather than
+   * imported, because older versions don't export the `Unloader` type.
+   */
+  unload?: (options?: { revalidate?: boolean }) => void;
 }
 
 /**

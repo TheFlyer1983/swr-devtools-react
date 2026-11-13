@@ -116,6 +116,14 @@ describe('<SWRDevtools /> (temporary readout)', () => {
     expect(rowFor('/api/posts')).toBeInTheDocument();
   });
 
+  it("doesn't submit a form it sits inside", () => {
+    renderTwoKeys();
+
+    for (const button of screen.getAllByRole('button')) {
+      expect(button).toHaveAttribute('type', 'button');
+    }
+  });
+
   describe('Clear all', () => {
     afterEach(() => {
       vi.restoreAllMocks();
