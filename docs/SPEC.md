@@ -104,8 +104,8 @@ import { SWRDevtools } from 'swr-devtools-react';
 ### 6.5 Actions
 
 - **Revalidate** a key (`mutate(key)`)
-- **Delete** a key from the cache; mounted hooks are notified. `cache.delete` alone doesn't notify them (see the cache-observation spike).
-- **Clear all**, behind a confirmation.
+- **Delete** a key from the cache; mounted hooks are notified. `cache.delete` alone doesn't notify them (see the cache-observation spike). Known limit: a hook using `keepPreviousData` keeps showing its last data until it next fetches, because SWR keeps that copy inside the hook and has no per-key way to drop it.
+- **Clear all**, behind a confirmation. On SWR 2.5+ it uses SWR's `unload()`, which also cancels in-flight requests and drops `keepPreviousData` copies.
 - **Edit data**: edit the JSON and apply it with `mutate(key, data, { revalidate: false })`. Invalid JSON is rejected with a clear message.
 
 **Done when:** each action visibly affects the playground UI as expected.
