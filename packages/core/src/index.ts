@@ -1,6 +1,10 @@
 export { createCacheReader } from './cache-reader.ts';
 export type { CacheEntry, CacheReader } from './cache-reader.ts';
+export { createCacheStore } from './cache-store.ts';
+export type { CacheStore } from './cache-store.ts';
 export { formatKey } from './format-key.ts';
+export { observeCache } from './observe-cache.ts';
+export type { CacheObserver, CacheObserverMode, ObserveCacheOptions } from './observe-cache.ts';
 export { getKeyKind } from './key-kind.ts';
 export type { KeyKind } from './key-kind.ts';
 export { getStatus } from './status.ts';
