@@ -85,7 +85,7 @@ import { SWRDevtools } from 'swr-devtools-react';
 
 - Lists every key in the SWR cache.
 - Status badge per key: loading, validating, success, error. Colours are designed for SWR's states, not copied from TanStack. An entry with no data, no error and no request in flight (e.g. after `mutate(key, undefined)`) shows as idle.
-- Shows time since the data last changed.
+- Shows time since the data was last fetched successfully or changed. A failed refetch doesn't reset it.
 - Serialised array/object keys are displayed readably.
 - `useSWRInfinite` (`$inf$`) and `useSWRSubscription` (`$sub$`) keys are labelled as such.
 - The list updates live as the cache changes, with no manual refresh.

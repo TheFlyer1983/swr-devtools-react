@@ -15,7 +15,7 @@ export interface CacheEntry {
   error: unknown;
   isLoading: boolean;
   isValidating: boolean;
-  /** When the reader first saw the current data (ms since epoch). */
+  /** When the data was last fetched successfully or changed (ms since epoch). */
   updatedAt: number;
 }
 
@@ -27,15 +27,19 @@ export interface CacheReader {
 /**
  * Creates a reader that turns an SWR cache into a list of entries.
  *
- * SWR doesn't record when data changed, so the reader remembers the `data`
- * object it last saw per key. Request-state writes (e.g. `isValidating`) and
- * errors keep the same `data` object, and SWR also keeps it when a refetch
- * returns equal data, so a different object means the data really changed at
- * `now`. A failed refetch therefore doesn't make old data look fresh. Call `read` whenever the cache changes (see the
- * cache-observation spike) to keep timestamps accurate.
+ * SWR doesn't record when data was last fetched, so the reader remembers
+ * the `data` object and `isValidating` flag it last saw per key. The time
+ * moves on when:
+ * - a request finishes without an error (`isValidating` true → false). SWR
+ *   keeps the same `data` object when a refetch returns equal data, so this
+ *   is the only way to see that refetch.
+ * - the data object changes, e.g. through `mutate(key, data)`.
+ * A failed refetch keeps the old time, so old data never looks fresh. Call
+ * `read` whenever the cache changes (see the cache-observation spike) to
+ * keep timestamps accurate.
  */
 export function createCacheReader(): CacheReader {
-  const seen = new Map<string, { data: unknown; updatedAt: number }>();
+  const seen = new Map<string, { data: unknown; isValidating: boolean; updatedAt: number }>();
 
   return {
     read(cache, now = Date.now()) {
@@ -47,11 +51,12 @@ export function createCacheReader(): CacheReader {
         if (!state) continue;
         present.add(key);
 
-        let record = seen.get(key);
-        if (!record || record.data !== state.data) {
-          record = { data: state.data, updatedAt: now };
-          seen.set(key, record);
-        }
+        const isValidating = state.isValidating ?? false;
+        const previous = seen.get(key);
+        const fetched = previous?.isValidating && !isValidating && state.error === undefined;
+        const updatedAt =
+          !previous || previous.data !== state.data || fetched ? now : previous.updatedAt;
+        seen.set(key, { data: state.data, isValidating, updatedAt });
 
         entries.push({
           key,
@@ -61,8 +66,8 @@ export function createCacheReader(): CacheReader {
           data: state.data,
           error: state.error,
           isLoading: state.isLoading ?? false,
-          isValidating: state.isValidating ?? false,
-          updatedAt: record.updatedAt
+          isValidating,
+          updatedAt
         });
       }
 

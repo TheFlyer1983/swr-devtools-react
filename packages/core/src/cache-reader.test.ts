@@ -92,30 +92,42 @@ describe('createCacheReader', () => {
     expect(reader.read(cache, 5000)[0]?.updatedAt).toBe(5000);
   });
 
-  it('keeps the timestamp when only the request state changes', () => {
+  it('keeps the timestamp while a refetch is in flight', () => {
     const data = { name: 'Ada' };
     const cache = cacheOf({ '/api/user': { data, isValidating: false } });
     const reader = createCacheReader();
     reader.read(cache, 1000);
 
-    // Revalidation writes a new entry with the same data object, and SWR
-    // keeps that object when the refetched data is equal.
     cache.set('/api/user', { data, isValidating: true });
-    expect(reader.read(cache, 5000)[0]?.updatedAt).toBe(1000);
 
-    cache.set('/api/user', { data, isValidating: false });
-    expect(reader.read(cache, 6000)[0]?.updatedAt).toBe(1000);
+    expect(reader.read(cache, 5000)[0]?.updatedAt).toBe(1000);
   });
 
-  it('keeps the timestamp when a refetch fails but the data is unchanged', () => {
+  it('updates the timestamp when a refetch succeeds, even with equal data', () => {
     const data = { name: 'Ada' };
-    const cache = cacheOf({ '/api/user': { data } });
+    const cache = cacheOf({ '/api/user': { data, isValidating: false } });
     const reader = createCacheReader();
     reader.read(cache, 1000);
 
-    cache.set('/api/user', { data, error: new Error('boom') });
+    // SWR keeps the same data object when the refetched data is equal.
+    cache.set('/api/user', { data, isValidating: true });
+    reader.read(cache, 5000);
+    cache.set('/api/user', { data, isValidating: false });
 
-    expect(reader.read(cache, 5000)[0]?.updatedAt).toBe(1000);
+    expect(reader.read(cache, 6000)[0]?.updatedAt).toBe(6000);
+  });
+
+  it('keeps the timestamp when a refetch fails', () => {
+    const data = { name: 'Ada' };
+    const cache = cacheOf({ '/api/user': { data, isValidating: false } });
+    const reader = createCacheReader();
+    reader.read(cache, 1000);
+
+    cache.set('/api/user', { data, isValidating: true });
+    reader.read(cache, 5000);
+    cache.set('/api/user', { data, error: new Error('boom'), isValidating: false });
+
+    expect(reader.read(cache, 6000)[0]?.updatedAt).toBe(1000);
   });
 
   it('forgets removed keys, so a key added again gets a new timestamp', () => {
