@@ -107,7 +107,7 @@ describe('createCacheReader', () => {
     expect(reader.read(cache, 6000)[0]?.updatedAt).toBe(1000);
   });
 
-  it('updates the timestamp when the error changes', () => {
+  it('keeps the timestamp when a refetch fails but the data is unchanged', () => {
     const data = { name: 'Ada' };
     const cache = cacheOf({ '/api/user': { data } });
     const reader = createCacheReader();
@@ -115,7 +115,7 @@ describe('createCacheReader', () => {
 
     cache.set('/api/user', { data, error: new Error('boom') });
 
-    expect(reader.read(cache, 5000)[0]?.updatedAt).toBe(5000);
+    expect(reader.read(cache, 5000)[0]?.updatedAt).toBe(1000);
   });
 
   it('forgets removed keys, so a key added again gets a new timestamp', () => {

@@ -47,6 +47,12 @@ describe('formatKey', () => {
     expect(formatKey(serialize({ 'a:b': { c: 'd' }, e: 2 }))).toBe('{ "a:b": { c: "d" }, e: 2 }');
   });
 
+  it('shows the ordinary reading when two objects hash the same (known limit)', () => {
+    // SWR doesn't escape property names, so these collide. See formatKey.
+    expect(serialize({ 'b:2,a': 1 })).toBe(serialize({ b: 2, a: 1 }));
+    expect(formatKey(serialize({ 'b:2,a': 1 }))).toBe('{ a: 1, b: 2 }');
+  });
+
   it('formats numbers, booleans, null and undefined', () => {
     expect(formatKey(serialize([-1.5, 1e21, NaN, false, undefined]))).toBe(
       '[-1.5, 1e+21, NaN, false, undefined]'

@@ -27,6 +27,12 @@ function formatName(name: string): string {
  * The format isn't designed to be parsed, so the decoder only accepts values
  * it can recognise for certain. A key containing anything else (a regex, a
  * symbol, a Map or class instance) is shown raw rather than guessed at.
+ *
+ * Known limit: property names aren't escaped, so some different objects hash
+ * the same. `{ b: 2, a: 1 }` and `{ 'b:2,a': 1 }` both become `#b:2,a:1,`,
+ * and no decoder can tell them apart. The decoder shows the ordinary reading,
+ * `{ a: 1, b: 2 }`. Showing every object key raw instead would hurt all
+ * users to cover property names containing both "," and ":".
  */
 export function formatKey(key: string): string {
   const prefix = PREFIXES.find((p) => key.startsWith(p));
