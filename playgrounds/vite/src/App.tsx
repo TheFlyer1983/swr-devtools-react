@@ -18,8 +18,8 @@ export function App() {
       <header className="app__header">
         <h1>SWR Devtools playground</h1>
         <p>
-          Mount and unmount scenarios to make cache keys appear and disappear. Each card shows its
-          SWR key and live status.
+          Mount scenarios to add their keys to the SWR cache. SWR keeps keys after a scenario
+          unmounts. Each card shows its SWR key and live status.
         </p>
       </header>
 
