@@ -1,5 +1,5 @@
 export { createCacheActions } from './cache-actions.ts';
-export type { CacheActions } from './cache-actions.ts';
+export type { CacheActions, CacheActionsConfig } from './cache-actions.ts';
 export { createCacheReader } from './cache-reader.ts';
 export type { CacheEntry, CacheReader } from './cache-reader.ts';
 export { createCacheStore } from './cache-store.ts';

@@ -16,15 +16,23 @@ function counter(prefix: string) {
   return { fetcher, calls: () => calls };
 }
 
-function Show({ swrKey, fetcher }: { swrKey: string; fetcher: () => Promise<string> }) {
-  const { data } = useSWR(swrKey, fetcher);
+function Show({
+  swrKey,
+  fetcher,
+  keepPreviousData = false
+}: {
+  swrKey: string;
+  fetcher: () => Promise<string>;
+  keepPreviousData?: boolean;
+}) {
+  const { data } = useSWR(swrKey, fetcher, { keepPreviousData });
   return <p>{`${swrKey}: ${data ?? 'none'}`}</p>;
 }
 
 let actions: CacheActions | undefined;
 function GrabActions() {
-  const { cache, mutate } = useSWRConfig();
-  actions ??= createCacheActions(cache, mutate);
+  const config = useSWRConfig();
+  actions ??= createCacheActions(config);
   return null;
 }
 
@@ -95,5 +103,32 @@ describe('cache actions with mounted hooks', () => {
 
     expect(await screen.findByText('/api/user: none')).toBeInTheDocument();
     expect(await screen.findByText('/api/posts: none')).toBeInTheDocument();
+  });
+
+  describe('with keepPreviousData', () => {
+    it('clearAll drops the data the hook keeps on screen', async () => {
+      const user = counter('v');
+      renderWith(<Show key="u" swrKey="/api/user" fetcher={user.fetcher} keepPreviousData />);
+      expect(await screen.findByText('/api/user: v1')).toBeInTheDocument();
+
+      await run((a) => a.clearAll());
+
+      expect(await screen.findByText('/api/user: none')).toBeInTheDocument();
+    });
+
+    // Known limit: SWR has no per-key unload, and the hook's kept data is
+    // internal. If this starts failing, SWR has changed and remove can do better.
+    it('remove empties the cache but the hook keeps showing its last data', async () => {
+      const user = counter('v');
+      const cache = renderWith(
+        <Show key="u" swrKey="/api/user" fetcher={user.fetcher} keepPreviousData />
+      );
+      expect(await screen.findByText('/api/user: v1')).toBeInTheDocument();
+
+      await run((a) => a.remove('/api/user'));
+
+      expect(cache.get('/api/user')).toBeUndefined();
+      expect(screen.getByText('/api/user: v1')).toBeInTheDocument();
+    });
   });
 });

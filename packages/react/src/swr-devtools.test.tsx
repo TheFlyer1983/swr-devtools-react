@@ -1,7 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import useSWR, { SWRConfig, useSWRConfig, type Cache } from 'swr';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SWRDevtools } from './swr-devtools.tsx';
 
 function Wrapper({ cache, children }: { cache: Cache; children: ReactNode }) {
@@ -16,6 +16,19 @@ function User({ fetcher }: { fetcher: () => Promise<string> }) {
 function AddKey() {
   const { mutate } = useSWRConfig();
   return <button onClick={() => mutate('/api/new', 'x', { revalidate: false })}>add</button>;
+}
+
+function renderTwoKeys() {
+  const cache: Cache = new Map([
+    ['/api/user', { data: 'Ada' }],
+    ['/api/posts', { data: [] }]
+  ]);
+  render(
+    <Wrapper cache={cache}>
+      <SWRDevtools />
+    </Wrapper>
+  );
+  return cache;
 }
 
 function rowFor(label: string): HTMLElement {
@@ -103,22 +116,34 @@ describe('<SWRDevtools /> (temporary readout)', () => {
     expect(rowFor('/api/posts')).toBeInTheDocument();
   });
 
-  it('clears every key', async () => {
-    const cache: Cache = new Map([
-      ['/api/user', { data: 'Ada' }],
-      ['/api/posts', { data: [] }]
-    ]);
-    render(
-      <Wrapper cache={cache}>
-        <SWRDevtools />
-      </Wrapper>
-    );
-
-    await act(async () => {
-      screen.getByRole('button', { name: 'Clear all' }).click();
+  describe('Clear all', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
     });
 
-    expect(screen.getByText(/0 keys/)).toBeInTheDocument();
+    it('clears every key once confirmed', async () => {
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+      renderTwoKeys();
+
+      await act(async () => {
+        screen.getByRole('button', { name: 'Clear all' }).click();
+      });
+
+      expect(confirm).toHaveBeenCalledOnce();
+      expect(screen.getByText(/0 keys/)).toBeInTheDocument();
+    });
+
+    it('keeps the cache when cancelled', async () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(false);
+      const cache = renderTwoKeys();
+
+      await act(async () => {
+        screen.getByRole('button', { name: 'Clear all' }).click();
+      });
+
+      expect([...cache.keys()]).toEqual(['/api/user', '/api/posts']);
+      expect(screen.getByText(/2 keys/)).toBeInTheDocument();
+    });
   });
 
   it('restores the cache when it unmounts', () => {
