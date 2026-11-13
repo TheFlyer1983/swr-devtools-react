@@ -1,6 +1,6 @@
 # swr-devtools-react: Specification
 
-Status: draft · Last updated: 2026-11-11
+Status: draft · Last updated: 2026-11-12
 
 ## 1. Problem
 
@@ -52,6 +52,24 @@ playgrounds/
 docs/
 ```
 
+### Setup
+
+One line, with no provider or middleware to add. Place `<SWRDevtools />` inside the app's `<SWRConfig>`:
+
+```tsx
+import { SWRConfig } from 'swr';
+import { SWRDevtools } from 'swr-devtools-react';
+
+<SWRConfig value={{ fetcher }}>
+  <App />
+  <SWRDevtools />
+</SWRConfig>;
+```
+
+- The panel uses the cache of the nearest `<SWRConfig>`, through `useSWRConfig()`. Without an `<SWRConfig>`, that's SWR's default global cache, so `<SWRDevtools />` can go anywhere in the tree.
+- Apps with several `<SWRConfig provider>`s get the nearest one only in the MVP. Choosing between caches is #25.
+- Live updates need no setup (see §4). Observer counts (v0.2) may justify optional middleware; that's decided in #21, and the one-line setup above must keep working without it.
+
 ## 6. MVP (v0.1) features
 
 ### 6.1 Floating toggle and panel
@@ -66,7 +84,7 @@ docs/
 ### 6.2 Cache key list
 
 - Lists every key in the SWR cache.
-- Status badge per key: loading, validating, success, error. Colours are designed for SWR's states, not copied from TanStack.
+- Status badge per key: loading, validating, success, error. Colours are designed for SWR's states, not copied from TanStack. An entry with no data, no error and no request in flight (e.g. after `mutate(key, undefined)`) shows as idle.
 - Shows time since the data last changed.
 - Serialised array/object keys are displayed readably.
 - `useSWRInfinite` (`$inf$`) and `useSWRSubscription` (`$sub$`) keys are labelled as such.
@@ -128,6 +146,6 @@ docs/
 ## 9. Open questions
 
 1. ~~**Live updates:** how to observe cache changes.~~ **Resolved (#5):** wrap `set`/`delete` on the existing cache object, with polling as a fallback. See §4 and [docs/spikes/cache-observation.md](spikes/cache-observation.md).
-2. **Setup API:** can `<SWRDevtools />` work just by being placed inside `<SWRConfig>`, or does it need a provider/middleware the user adds? Aim for one line of setup. _Partly answered by #5: live updates need no setup. Still open: whether observer counts (v0.2) justify asking for middleware._
-3. **Multiple SWR caches:** apps with more than one `SWRConfig` provider. Support in MVP or later?
+2. ~~**Setup API:** can `<SWRDevtools />` work just by being placed inside `<SWRConfig>`?~~ **Resolved (#6):** yes. See §5, Setup. Whether observer counts justify optional middleware is decided in #21.
+3. ~~**Multiple SWR caches:** support in MVP or later?~~ **Resolved (#6):** the MVP inspects the nearest `<SWRConfig>` only. Choosing between caches is #25.
 4. **Edit-data UX:** raw JSON textarea for MVP, or a proper inline JSON editor?
