@@ -52,6 +52,18 @@ describe('observeCache', () => {
     observer.unsubscribe();
   });
 
+  it('keeps the return values of the original methods', () => {
+    const map = new Map<string, State>();
+    const observer = observeCache(map, () => {});
+
+    // Map#set returns the map (so calls chain) and Map#delete a boolean.
+    expect(map.set('a', { data: 1 }).set('b', { data: 2 })).toBe(map);
+    expect(map.delete('a')).toBe(true);
+    expect(map.delete('missing')).toBe(false);
+
+    observer.unsubscribe();
+  });
+
   it('batches many writes into one notification', async () => {
     const cache: Cache = new Map();
     const listener = vi.fn<() => void>();

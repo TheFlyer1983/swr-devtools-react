@@ -91,14 +91,19 @@ function installPatch(cache: Cache): Patch | undefined {
     });
   };
 
+  // SWR's Cache type says these return void, but the app's cache may be a Map
+  // whose `set` returns the map and `delete` a boolean. Pass those through so
+  // observing never changes how the cache behaves.
   try {
-    cache.set = (key: string, value: State) => {
-      originalSet(key, value);
+    cache.set = (key: string, value: State): unknown => {
+      const result: unknown = originalSet(key, value);
       notify();
+      return result;
     };
-    cache.delete = (key: string) => {
-      originalDelete(key);
+    cache.delete = (key: string): unknown => {
+      const result: unknown = originalDelete(key);
       notify();
+      return result;
     };
   } catch {
     // Frozen or sealed cache: assignment throws in strict mode.
