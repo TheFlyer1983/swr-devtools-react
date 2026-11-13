@@ -84,6 +84,43 @@ describe('<SWRDevtools /> (temporary readout)', () => {
     expect(await screen.findByText('/api/new')).toBeInTheDocument();
   });
 
+  it('deletes a key from its row', async () => {
+    const cache: Cache = new Map([
+      ['/api/user', { data: 'Ada' }],
+      ['/api/posts', { data: [] }]
+    ]);
+    render(
+      <Wrapper cache={cache}>
+        <SWRDevtools />
+      </Wrapper>
+    );
+
+    await act(async () => {
+      within(rowFor('/api/user')).getByRole('button', { name: 'Delete' }).click();
+    });
+
+    expect(screen.queryByText('/api/user')).not.toBeInTheDocument();
+    expect(rowFor('/api/posts')).toBeInTheDocument();
+  });
+
+  it('clears every key', async () => {
+    const cache: Cache = new Map([
+      ['/api/user', { data: 'Ada' }],
+      ['/api/posts', { data: [] }]
+    ]);
+    render(
+      <Wrapper cache={cache}>
+        <SWRDevtools />
+      </Wrapper>
+    );
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'Clear all' }).click();
+    });
+
+    expect(screen.getByText(/0 keys/)).toBeInTheDocument();
+  });
+
   it('restores the cache when it unmounts', () => {
     const cache: Cache = new Map();
     const { unmount } = render(

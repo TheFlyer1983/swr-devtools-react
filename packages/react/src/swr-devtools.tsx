@@ -1,4 +1,4 @@
-import { createCacheStore } from '@swr-devtools-react/core';
+import { createCacheActions, createCacheStore } from '@swr-devtools-react/core';
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { useSWRConfig } from 'swr';
 
@@ -8,21 +8,23 @@ export interface SWRDevtoolsProps {
 }
 
 /**
- * Temporary readout of the live cache, so #7 and #8 can be checked in the
- * playground. The panel shell (#11) and key list (#12) replace it.
+ * Temporary readout of the live cache, with buttons for the core actions, so
+ * #7, #8 and #9 can be checked in the playground. The panel shell (#11) and key list (#12) replace it.
  */
 export function SWRDevtools({ initialIsOpen = false }: SWRDevtoolsProps): ReactElement {
-  const { cache } = useSWRConfig();
+  const { cache, mutate } = useSWRConfig();
   // Creating the store only reads the cache; the patch is installed when
   // useSyncExternalStore subscribes, after React commits.
   const store = useMemo(() => createCacheStore(cache), [cache]);
   const entries = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  const actions = useMemo(() => createCacheActions(cache, mutate), [cache, mutate]);
   const now = useNow(1000);
 
   return (
     <div data-swr-devtools="" data-open={initialIsOpen}>
       <p>
-        SWR Devtools: {entries.length} keys ({store.getMode()})
+        SWR Devtools: {entries.length} keys ({store.getMode()}){' '}
+        <button onClick={() => void actions.clearAll()}>Clear all</button>
       </p>
       <table>
         <thead>
@@ -31,6 +33,7 @@ export function SWRDevtools({ initialIsOpen = false }: SWRDevtoolsProps): ReactE
             <th>Kind</th>
             <th>Status</th>
             <th>Updated</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -40,6 +43,10 @@ export function SWRDevtools({ initialIsOpen = false }: SWRDevtoolsProps): ReactE
               <td>{entry.kind}</td>
               <td>{entry.status}</td>
               <td>{formatAge(now - entry.updatedAt)}</td>
+              <td>
+                <button onClick={() => void actions.revalidate(entry.key)}>Revalidate</button>{' '}
+                <button onClick={() => void actions.remove(entry.key)}>Delete</button>
+              </td>
             </tr>
           ))}
         </tbody>
