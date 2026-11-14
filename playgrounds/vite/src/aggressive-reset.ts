@@ -11,7 +11,10 @@ export const aggressiveReset = `
   background: #fff700 !important;
   border: 2px dashed #ff0000 !important;
 }
+html, body { direction: rtl !important; }
 head, style, script { display: none !important; }
+/* Keep the playground's own checkboxes usable: visible state and focus. */
+input { all: revert !important; }
 div, p, header, main, fieldset, table, label { display: block !important; }
 [data-swr-devtools] { display: none !important; opacity: 0.2 !important; }
 `;

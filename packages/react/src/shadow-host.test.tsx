@@ -27,6 +27,9 @@ describe('<ShadowHost />', () => {
     const css = host()?.shadowRoot?.querySelector('style')?.textContent ?? '';
     expect(css).toContain(':host');
     expect(css).toContain('all: initial !important');
+    // `all` doesn't cover direction, so the host page's RTL would leak in.
+    expect(css).toContain('direction: ltr !important');
+    expect(css).toContain('unicode-bidi: isolate !important');
     for (const token of ['color-bg', 'space-1', 'radius-sm', 'font-sans', 'color-error']) {
       expect(css).toContain(`--swr-dt-${token}:`);
     }

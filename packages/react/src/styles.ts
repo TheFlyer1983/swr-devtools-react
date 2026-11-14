@@ -11,6 +11,9 @@ export const styles = `
   /* Inner !important beats the host page's !important, so even an
      aggressive global reset can't restyle or hide the host element. */
   all: initial !important;
+  /* \`all\` leaves these two out, so an RTL host page would flip the panel. */
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
 
   /* Colours */
   --swr-dt-color-bg: #ffffff;
