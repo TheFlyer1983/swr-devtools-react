@@ -11,7 +11,7 @@ const config: UserConfig = defineConfig({
     // core is internal: bundle it in instead of importing it.
     alwaysBundle: ['@swr-devtools-react/core'],
     // Fail the build if the output imports anything except the peers.
-    onlyImport: ['react', 'swr']
+    onlyImport: ['react', 'react-dom', 'swr']
   }
 });
 

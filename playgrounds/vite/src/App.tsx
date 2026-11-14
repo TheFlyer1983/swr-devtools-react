@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { SWRDevtools } from 'swr-devtools-react';
+import { aggressiveReset } from './aggressive-reset.ts';
 import { scenarios } from './scenarios/index.ts';
 
 export function App() {
+  const [reset, setReset] = useState(false);
   const [mounted, setMounted] = useState<Set<string>>(() => new Set(scenarios.map((s) => s.id)));
 
   const toggle = (id: string) =>
@@ -21,6 +23,11 @@ export function App() {
           Mount scenarios to add their keys to the SWR cache. SWR keeps keys after a scenario
           unmounts. Each card shows its SWR key and live status.
         </p>
+        <label>
+          <input type="checkbox" checked={reset} onChange={() => setReset(!reset)} />
+          Apply an aggressive global CSS reset (the devtools should be unaffected)
+        </label>
+        {reset && <style>{aggressiveReset}</style>}
       </header>
 
       <fieldset className="toggles">
