@@ -13,8 +13,9 @@ export interface CacheActions {
   remove: (key: string) => Promise<void>;
   /**
    * Removes every key, including infinite and subscription keys, without
-   * refetching. On SWR 2.5+, which has `unload`, it also drops data kept by
-   * `keepPreviousData`. Older versions have the same limit as `remove`.
+   * refetching. When given SWR's `unload` (SWR 2.5+, from `useSWRConfig()`),
+   * it also drops data kept by `keepPreviousData`. Without it, it removes
+   * keys one by one, with the same limit as `remove`.
    */
   clearAll: () => Promise<void>;
   /** Replaces the key's data without refetching. */
