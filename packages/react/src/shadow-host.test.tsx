@@ -36,6 +36,18 @@ describe('<ShadowHost />', () => {
     expect(document.head.querySelector('style')).toBeNull();
   });
 
+  it('puts the host where it is rendered when inline', () => {
+    const { container } = render(
+      <ShadowHost inline>
+        <p>inside</p>
+      </ShadowHost>
+    );
+
+    expect(host()?.parentElement).toBe(container);
+    expect(host()).toHaveAttribute('data-inline');
+    expect(host()?.shadowRoot?.querySelector('p')?.textContent).toBe('inside');
+  });
+
   it('removes the host when it unmounts', () => {
     const { unmount } = render(<ShadowHost>{null}</ShadowHost>);
     expect(host()).not.toBeNull();

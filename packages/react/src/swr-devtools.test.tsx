@@ -1,179 +1,180 @@
-import { act, render, screen, within } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import useSWR, { SWRConfig, useSWRConfig, type Cache } from 'swr';
+import { act, fireEvent, render } from '@testing-library/react';
+import { SWRConfig, type Cache } from 'swr';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SWRDevtools } from './swr-devtools.tsx';
+import { DEFAULT_HEIGHT, DEFAULT_WIDTH, STORAGE_KEY } from './storage.ts';
+import { MIN_SIZE, SWRDevtools, type SWRDevtoolsProps } from './swr-devtools.tsx';
 
-function Wrapper({ cache, children }: { cache: Cache; children: ReactNode }) {
-  return <SWRConfig value={{ provider: () => cache, dedupingInterval: 0 }}>{children}</SWRConfig>;
-}
-
-function User({ fetcher }: { fetcher: () => Promise<string> }) {
-  const { data } = useSWR('/api/user', fetcher);
-  return <p>user: {data ?? '…'}</p>;
-}
-
-function AddKey() {
-  const { mutate } = useSWRConfig();
-  return <button onClick={() => mutate('/api/new', 'x', { revalidate: false })}>add</button>;
-}
-
-function renderTwoKeys() {
-  const cache: Cache = new Map([
-    ['/api/user', { data: 'Ada' }],
-    ['/api/posts', { data: [] }]
-  ]);
-  render(
-    <Wrapper cache={cache}>
-      <SWRDevtools />
-    </Wrapper>
+function renderDevtools(props: SWRDevtoolsProps = {}) {
+  const cache: Cache = new Map([['/api/user', { data: 'Ada' }]]);
+  return render(
+    <SWRConfig value={{ provider: () => cache }}>
+      <SWRDevtools {...props} />
+    </SWRConfig>
   );
-  return cache;
 }
 
-/** The readout renders in a shadow root, which `screen` queries don't reach. */
-function panel() {
-  const root = document
-    .querySelector('[data-swr-devtools]')
-    ?.shadowRoot?.querySelector<HTMLElement>('.root');
-  if (!root) throw new Error('Panel not rendered');
-  return within(root);
+/** Finds an element in the devtools' shadow root, which `screen` can't reach. */
+function find(selector: string): HTMLElement | null {
+  return (
+    document
+      .querySelector('[data-swr-devtools]')
+      ?.shadowRoot?.querySelector<HTMLElement>(selector) ?? null
+  );
 }
 
-function rowFor(label: string): HTMLElement {
-  const row = panel().getByText(label).closest('tr');
-  if (!row) throw new Error(`No row for ${label}`);
-  return row;
+function get(selector: string): HTMLElement {
+  const element = find(selector);
+  if (!element) throw new Error(`Nothing matches ${selector}`);
+  return element;
 }
 
-describe('<SWRDevtools /> (temporary readout)', () => {
-  it('lists keys already in the cache', () => {
-    const cache: Cache = new Map([['/api/user', { data: 'Ada' }]]);
-    render(
-      <Wrapper cache={cache}>
-        <SWRDevtools />
-      </Wrapper>
-    );
+function click(selector: string) {
+  act(() => get(selector).click());
+}
 
-    expect(within(rowFor('/api/user')).getByText('success')).toBeInTheDocument();
+function saved(): unknown {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  return raw === null ? null : JSON.parse(raw);
+}
+
+afterEach(() => {
+  localStorage.clear();
+  vi.restoreAllMocks();
+});
+
+describe('<SWRDevtools />', () => {
+  it('starts closed, with a toggle in the bottom-right corner', () => {
+    renderDevtools();
+
+    expect(get('.toggle')).toHaveAttribute('data-position', 'bottom-right');
+    expect(get('.toggle')).toHaveAccessibleName('Open SWR Devtools');
+    expect(find('.panel')).toBeNull();
   });
 
-  it('updates live as a hook fetches', async () => {
-    let resolve: ((value: string) => void) | undefined;
-    const fetcher = () => new Promise<string>((r) => (resolve = r));
-    render(
-      <Wrapper cache={new Map()}>
-        <User fetcher={fetcher} />
-        <SWRDevtools />
-      </Wrapper>
+  it('opens a panel docked at the bottom, and closes it again', () => {
+    renderDevtools();
+
+    click('.toggle');
+
+    expect(find('.toggle')).toBeNull();
+    expect(get('.panel')).toHaveAttribute('data-position', 'bottom');
+    expect(get('.panel').style.height).toBe(`${DEFAULT_HEIGHT}px`);
+    expect(get('.panel-content')).toHaveTextContent('/api/user');
+
+    click('[aria-label="Close SWR Devtools"]');
+
+    expect(find('.panel')).toBeNull();
+    expect(document.querySelector('[data-swr-devtools]')?.shadowRoot?.activeElement).toBe(
+      get('.toggle')
     );
-
-    expect(await within(rowFor('/api/user')).findByText('loading')).toBeInTheDocument();
-
-    await act(async () => resolve?.('Ada'));
-
-    expect(await within(rowFor('/api/user')).findByText('success')).toBeInTheDocument();
   });
 
-  it('shows readable labels and kinds', () => {
-    const cache: Cache = new Map([
-      ['@"/api/posts",2,', { data: [] }],
-      ['$inf$/api/feed?page=1', { data: [] }]
-    ]);
-    render(
-      <Wrapper cache={cache}>
-        <SWRDevtools />
-      </Wrapper>
-    );
+  it('opens straight away with initialIsOpen', () => {
+    renderDevtools({ initialIsOpen: true });
 
-    expect(rowFor('["/api/posts", 2]')).toBeInTheDocument();
-    expect(within(rowFor('/api/feed?page=1')).getByText('infinite')).toBeInTheDocument();
+    expect(find('.panel')).not.toBeNull();
   });
 
-  it('updates when a key is changed with mutate', async () => {
-    const cache: Cache = new Map([['/api/user', { data: 'Ada' }]]);
-    render(
-      <Wrapper cache={cache}>
-        <AddKey />
-        <SWRDevtools />
-      </Wrapper>
-    );
+  it('puts the toggle in the chosen corner and docks the panel on the right', () => {
+    renderDevtools({ buttonPosition: 'top-left', position: 'right' });
+    expect(get('.toggle')).toHaveAttribute('data-position', 'top-left');
 
-    await act(async () => {
-      screen.getByRole('button', { name: 'add' }).click();
+    click('.toggle');
+
+    expect(get('.panel')).toHaveAttribute('data-position', 'right');
+    expect(get('.panel').style.width).toBe(`${DEFAULT_WIDTH}px`);
+  });
+
+  describe('remembering state', () => {
+    it('reopens after a reload once the user has opened it', () => {
+      const { unmount } = renderDevtools();
+      click('.toggle');
+      expect(saved()).toEqual({ isOpen: true, height: DEFAULT_HEIGHT, width: DEFAULT_WIDTH });
+
+      unmount();
+      renderDevtools();
+
+      expect(find('.panel')).not.toBeNull();
     });
 
-    expect(await panel().findByText('/api/new')).toBeInTheDocument();
-  });
+    it("doesn't save initialIsOpen until the user opens or closes the panel", () => {
+      renderDevtools({ initialIsOpen: true });
 
-  it('deletes a key from its row', async () => {
-    const cache: Cache = new Map([
-      ['/api/user', { data: 'Ada' }],
-      ['/api/posts', { data: [] }]
-    ]);
-    render(
-      <Wrapper cache={cache}>
-        <SWRDevtools />
-      </Wrapper>
-    );
-
-    await act(async () => {
-      within(rowFor('/api/user')).getByRole('button', { name: 'Delete' }).click();
+      expect(saved()).toBeNull();
     });
 
-    expect(panel().queryByText('/api/user')).not.toBeInTheDocument();
-    expect(rowFor('/api/posts')).toBeInTheDocument();
-  });
+    it('prefers what the user chose over initialIsOpen', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ isOpen: false }));
 
-  it("doesn't submit a form it sits inside", () => {
-    renderTwoKeys();
+      renderDevtools({ initialIsOpen: true });
 
-    for (const button of panel().getAllByRole('button')) {
-      expect(button).toHaveAttribute('type', 'button');
-    }
-  });
-
-  describe('Clear all', () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
+      expect(find('.panel')).toBeNull();
     });
 
-    it('clears every key once confirmed', async () => {
-      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
-      renderTwoKeys();
-
-      await act(async () => {
-        panel().getByRole('button', { name: 'Clear all' }).click();
+    it('still works when storage throws', () => {
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new Error('SecurityError');
       });
-
-      expect(confirm).toHaveBeenCalledOnce();
-      expect(panel().getByText(/0 keys/)).toBeInTheDocument();
-    });
-
-    it('keeps the cache when cancelled', async () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
-      const cache = renderTwoKeys();
-
-      await act(async () => {
-        panel().getByRole('button', { name: 'Clear all' }).click();
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('QuotaExceededError');
       });
+      renderDevtools();
 
-      expect([...cache.keys()]).toEqual(['/api/user', '/api/posts']);
-      expect(panel().getByText(/2 keys/)).toBeInTheDocument();
+      click('.toggle');
+
+      expect(find('.panel')).not.toBeNull();
     });
   });
 
-  it('restores the cache when it unmounts', () => {
-    const cache: Cache = new Map();
-    const { unmount } = render(
-      <Wrapper cache={cache}>
-        <SWRDevtools />
-      </Wrapper>
-    );
-    expect(Object.hasOwn(cache, 'set')).toBe(true);
+  describe('resizing', () => {
+    it('drags the top edge of a bottom panel', () => {
+      renderDevtools({ initialIsOpen: true });
+      const handle = get('[role="separator"]');
 
-    unmount();
+      fireEvent.pointerDown(handle);
+      fireEvent.pointerMove(window, { clientY: window.innerHeight - 400 });
+      fireEvent.pointerUp(window);
+      fireEvent.pointerMove(window, { clientY: window.innerHeight - 500 });
 
-    expect(Object.hasOwn(cache, 'set')).toBe(false);
+      expect(get('.panel').style.height).toBe('400px');
+      expect(saved()).toMatchObject({ height: 400 });
+    });
+
+    it('drags the left edge of a right panel', () => {
+      renderDevtools({ initialIsOpen: true, position: 'right' });
+
+      fireEvent.pointerDown(get('[role="separator"]'));
+      fireEvent.pointerMove(window, { clientX: window.innerWidth - 300 });
+      fireEvent.pointerUp(window);
+
+      expect(get('.panel').style.width).toBe('300px');
+      expect(saved()).toMatchObject({ width: 300 });
+    });
+
+    it('resizes with the arrow keys', () => {
+      renderDevtools({ initialIsOpen: true });
+      const handle = get('[role="separator"]');
+      expect(handle).toHaveAttribute('aria-valuenow', String(DEFAULT_HEIGHT));
+
+      fireEvent.keyDown(handle, { key: 'ArrowUp' });
+
+      expect(get('.panel').style.height).toBe(`${DEFAULT_HEIGHT + 16}px`);
+      expect(get('[role="separator"]')).toHaveAttribute(
+        'aria-valuenow',
+        String(DEFAULT_HEIGHT + 16)
+      );
+    });
+
+    it('keeps the panel between the minimum size and the viewport', () => {
+      renderDevtools({ initialIsOpen: true });
+
+      fireEvent.pointerDown(get('[role="separator"]'));
+      fireEvent.pointerMove(window, { clientY: window.innerHeight - 10 });
+      expect(get('.panel').style.height).toBe(`${MIN_SIZE}px`);
+
+      fireEvent.pointerMove(window, { clientY: -500 });
+      expect(get('.panel').style.height).toBe(`${window.innerHeight - 40}px`);
+      fireEvent.pointerUp(window);
+    });
   });
 });
