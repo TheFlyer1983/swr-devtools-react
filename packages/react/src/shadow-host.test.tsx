@@ -30,10 +30,27 @@ describe('<ShadowHost />', () => {
     // `all` doesn't cover direction, so the host page's RTL would leak in.
     expect(css).toContain('direction: ltr !important');
     expect(css).toContain('unicode-bidi: isolate !important');
+    // Keeps a resized panel on screen when the window shrinks.
+    expect(css).toContain('max-height: calc(100vh - 40px)');
+    expect(css).toContain('max-width: calc(100vw - 40px)');
+    // Lets touch drags resize the panel instead of scrolling the page.
+    expect(css).toContain('touch-action: none');
     for (const token of ['color-bg', 'space-1', 'radius-sm', 'font-sans', 'color-error']) {
       expect(css).toContain(`--swr-dt-${token}:`);
     }
     expect(document.head.querySelector('style')).toBeNull();
+  });
+
+  it('puts the host where it is rendered when inline', () => {
+    const { container } = render(
+      <ShadowHost inline>
+        <p>inside</p>
+      </ShadowHost>
+    );
+
+    expect(host()?.parentElement).toBe(container);
+    expect(host()).toHaveAttribute('data-inline');
+    expect(host()?.shadowRoot?.querySelector('p')?.textContent).toBe('inside');
   });
 
   it('removes the host when it unmounts', () => {

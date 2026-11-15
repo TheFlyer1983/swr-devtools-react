@@ -48,6 +48,17 @@ export const styles = `
   --swr-dt-font-size-sm: 12px;
   --swr-dt-font-size-md: 13px;
   --swr-dt-line-height: 1.4;
+
+  /* Layering and elevation */
+  --swr-dt-z-index: 99999;
+  --swr-dt-shadow: 0 4px 16px rgb(0 0 0 / 0.16);
+}
+
+/* <SWRDevtoolsPanel /> fills the element the app renders it in. */
+:host([data-inline]) {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 *,
@@ -56,24 +67,115 @@ export const styles = `
   box-sizing: border-box;
 }
 
-.root {
+.toggle {
+  position: fixed;
+  z-index: var(--swr-dt-z-index);
+  margin: var(--swr-dt-space-4);
+  padding: var(--swr-dt-space-2) var(--swr-dt-space-3);
+  font-family: var(--swr-dt-font-sans);
+  font-size: var(--swr-dt-font-size-md);
+  font-weight: 700;
+  color: var(--swr-dt-color-accent-text);
+  background: var(--swr-dt-color-accent);
+  border-color: var(--swr-dt-color-accent);
+  border-radius: var(--swr-dt-radius-full);
+  box-shadow: var(--swr-dt-shadow);
+}
+
+.toggle:hover {
+  border-color: var(--swr-dt-color-text);
+}
+
+.toggle[data-position^='top'] {
+  top: 0;
+}
+
+.toggle[data-position^='bottom'] {
+  bottom: 0;
+}
+
+.toggle[data-position$='left'] {
+  left: 0;
+}
+
+.toggle[data-position$='right'] {
+  right: 0;
+}
+
+.panel {
+  position: fixed;
+  z-index: var(--swr-dt-z-index);
+  display: flex;
+  background: var(--swr-dt-color-bg);
+  box-shadow: var(--swr-dt-shadow);
+}
+
+.panel[data-position='bottom'] {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  flex-direction: column;
+  /* The size is clamped when it's set; this keeps it on screen when the
+     window shrinks afterwards. 40px matches VIEWPORT_GAP. */
+  max-height: calc(100vh - 40px);
+  border-top: 1px solid var(--swr-dt-color-border);
+}
+
+.panel[data-position='right'] {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  flex-direction: row;
+  max-width: calc(100vw - 40px);
+  border-left: 1px solid var(--swr-dt-color-border);
+}
+
+.resize-handle {
+  flex: none;
+  background: transparent;
+  /* Without this, a touch drag on the edge scrolls the page instead. */
+  touch-action: none;
+}
+
+.panel[data-position='bottom'] > .resize-handle {
+  height: var(--swr-dt-space-1);
+  cursor: ns-resize;
+}
+
+.panel[data-position='right'] > .resize-handle {
+  width: var(--swr-dt-space-1);
+  cursor: ew-resize;
+}
+
+.resize-handle:hover,
+.resize-handle:focus-visible {
+  background: var(--swr-dt-color-accent);
+  outline: none;
+}
+
+.panel-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
   color-scheme: light;
   font-family: var(--swr-dt-font-sans);
   font-size: var(--swr-dt-font-size-md);
   line-height: var(--swr-dt-line-height);
   color: var(--swr-dt-color-text);
   background: var(--swr-dt-color-bg);
-  border: 1px solid var(--swr-dt-color-border);
-  border-radius: var(--swr-dt-radius-md);
-  padding: var(--swr-dt-space-3);
-  margin: var(--swr-dt-space-4);
 }
 
 .header {
   display: flex;
+  flex: none;
   align-items: center;
   gap: var(--swr-dt-space-2);
-  margin: 0 0 var(--swr-dt-space-2);
+  padding: var(--swr-dt-space-2) var(--swr-dt-space-3);
+  background: var(--swr-dt-color-surface);
+  border-bottom: 1px solid var(--swr-dt-color-border);
 }
 
 .title {
@@ -82,6 +184,19 @@ export const styles = `
 
 .mode {
   color: var(--swr-dt-color-muted);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--swr-dt-space-1);
+  margin-left: auto;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 var(--swr-dt-space-3) var(--swr-dt-space-3);
 }
 
 button {
