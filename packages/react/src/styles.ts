@@ -233,15 +233,20 @@ button:focus-visible {
 
 .key-row {
   display: flex;
+  flex-wrap: wrap;
+  /* Whatever wraps onto a second line sits on the right, like the first. */
+  justify-content: flex-end;
   align-items: center;
-  gap: var(--swr-dt-space-2);
+  gap: var(--swr-dt-space-1) var(--swr-dt-space-2);
   min-height: 32px;
   padding: var(--swr-dt-space-1) 0;
   border-bottom: 1px solid var(--swr-dt-color-border);
 }
 
+/* In a narrow panel the key keeps 128px next to the badge, and the kind,
+   age and actions wrap onto a second line. */
 .key {
-  flex: 1;
+  flex: 1 1 128px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
