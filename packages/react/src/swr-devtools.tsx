@@ -6,7 +6,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactElement
 } from 'react';
-import { Panel } from './panel.tsx';
+import { Panel, useCacheView } from './panel.tsx';
 import { ShadowHost } from './shadow-host.tsx';
 import {
   DEFAULT_HEIGHT,
@@ -61,6 +61,8 @@ interface FloatingProps {
 }
 
 function Floating({ initialIsOpen, buttonPosition, position }: FloatingProps): ReactElement {
+  // Watched here, not in the panel, so ages are right whenever it opens.
+  const view = useCacheView();
   // Safe to read storage here: ShadowHost only renders this on the client,
   // after mount, so there's no server markup to mismatch.
   const [state, setState] = useState<PanelState>(() =>
@@ -116,6 +118,7 @@ function Floating({ initialIsOpen, buttonPosition, position }: FloatingProps): R
     >
       <ResizeHandle isBottom={isBottom} size={size} onResize={resize} />
       <Panel
+        view={view}
         onClose={() => {
           focusToggle.current = true;
           update({ isOpen: false });
@@ -142,12 +145,15 @@ function ResizeHandle({ isBottom, size, onResize }: ResizeHandleProps): ReactEle
   const stop = () => {
     window.removeEventListener('pointermove', move);
     window.removeEventListener('pointerup', stop);
+    window.removeEventListener('pointercancel', stop);
     stopDrag.current = null;
   };
   const startDrag = (event: ReactPointerEvent) => {
     event.preventDefault();
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', stop);
+    // The browser cancels the pointer for things like palm rejection.
+    window.addEventListener('pointercancel', stop);
     stopDrag.current = stop;
   };
 

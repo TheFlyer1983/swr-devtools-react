@@ -85,6 +85,31 @@ describe('<SWRDevtools />', () => {
     expect(get('.panel').style.width).toBe(`${DEFAULT_WIDTH}px`);
   });
 
+  describe('ages', () => {
+    // SWR doesn't record when data changed, so the devtools time changes
+    // themselves. They watch from mount, not only while the panel is open.
+    it('are right when the panel first opens', () => {
+      const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+      renderDevtools();
+
+      now.mockReturnValue(1_060_000);
+      click('.toggle');
+
+      expect(get('.panel-content')).toHaveTextContent('1m ago');
+    });
+
+    it("don't reset when the panel is closed and reopened", () => {
+      const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+      renderDevtools({ initialIsOpen: true });
+      click('[aria-label="Close SWR Devtools"]');
+
+      now.mockReturnValue(1_060_000);
+      click('.toggle');
+
+      expect(get('.panel-content')).toHaveTextContent('1m ago');
+    });
+  });
+
   describe('remembering state', () => {
     it('reopens after a reload once the user has opened it', () => {
       const { unmount } = renderDevtools();
@@ -149,6 +174,17 @@ describe('<SWRDevtools />', () => {
 
       expect(get('.panel').style.width).toBe('300px');
       expect(saved()).toMatchObject({ width: 300 });
+    });
+
+    it('stops dragging when the browser cancels the pointer', () => {
+      renderDevtools({ initialIsOpen: true });
+
+      fireEvent.pointerDown(get('[role="separator"]'));
+      fireEvent.pointerMove(window, { clientY: window.innerHeight - 400 });
+      fireEvent.pointerCancel(window);
+      fireEvent.pointerMove(window, { clientY: window.innerHeight - 500 });
+
+      expect(get('.panel').style.height).toBe('400px');
     });
 
     it('resizes with the arrow keys', () => {

@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Panel } from './panel.tsx';
+import { Panel, useCacheView } from './panel.tsx';
 import { ShadowHost } from './shadow-host.tsx';
 
 /**
@@ -12,7 +12,11 @@ import { ShadowHost } from './shadow-host.tsx';
 export function SWRDevtoolsPanel(): ReactElement | null {
   return (
     <ShadowHost inline>
-      <Panel />
+      <InlinePanel />
     </ShadowHost>
   );
+}
+
+function InlinePanel(): ReactElement {
+  return <Panel view={useCacheView()} />;
 }

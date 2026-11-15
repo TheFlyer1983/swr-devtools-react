@@ -115,6 +115,9 @@ export const styles = `
   right: 0;
   bottom: 0;
   flex-direction: column;
+  /* The size is clamped when it's set; this keeps it on screen when the
+     window shrinks afterwards. 40px matches VIEWPORT_GAP. */
+  max-height: calc(100vh - 40px);
   border-top: 1px solid var(--swr-dt-color-border);
 }
 
@@ -123,12 +126,15 @@ export const styles = `
   right: 0;
   bottom: 0;
   flex-direction: row;
+  max-width: calc(100vw - 40px);
   border-left: 1px solid var(--swr-dt-color-border);
 }
 
 .resize-handle {
   flex: none;
   background: transparent;
+  /* Without this, a touch drag on the edge scrolls the page instead. */
+  touch-action: none;
 }
 
 .panel[data-position='bottom'] > .resize-handle {

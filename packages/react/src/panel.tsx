@@ -1,20 +1,31 @@
-import { createCacheActions, createCacheStore } from '@swr-devtools-react/core';
+import {
+  createCacheActions,
+  createCacheStore,
+  type CacheActions,
+  type CacheEntry,
+  type CacheObserverMode
+} from '@swr-devtools-react/core';
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { useSWRConfig } from 'swr';
 
-export interface PanelProps {
-  /** Shows a close button in the header. The floating panel passes it. */
-  onClose?: () => void;
+/** The live cache, and the actions on it, as the panel shows them. */
+export interface CacheView {
+  entries: CacheEntry[];
+  mode: CacheObserverMode;
+  actions: CacheActions;
 }
 
 /**
- * The panel's content: a header, and the cache readout. The key list (#12)
- * replaces the readout table.
+ * Watches the nearest SWR cache for as long as the calling component is
+ * mounted.
  *
- * The cache is only observed while this is mounted, so a closed floating
- * panel costs nothing.
+ * SWR doesn't record when data changed, so the reader times changes itself
+ * and can only time what it sees. Call this where it lives as long as
+ * `<SWRDevtools />`, not inside the panel, so ages are right when the panel
+ * opens, the way TanStack Query Devtools shows them. Watching a closed panel
+ * is cheap: a wrapped `cache.set` and a batched re-read.
  */
-export function Panel({ onClose }: PanelProps): ReactElement {
+export function useCacheView(): CacheView {
   const config = useSWRConfig();
   const { cache } = config;
   // Creating the store only reads the cache; the patch is installed when
@@ -22,6 +33,21 @@ export function Panel({ onClose }: PanelProps): ReactElement {
   const store = useMemo(() => createCacheStore(cache), [cache]);
   const entries = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const actions = useMemo(() => createCacheActions(config), [config]);
+  return { entries, mode: store.getMode(), actions };
+}
+
+export interface PanelProps {
+  view: CacheView;
+  /** Shows a close button in the header. The floating panel passes it. */
+  onClose?: () => void;
+}
+
+/**
+ * The panel's content: a header, and the cache readout. The key list (#12)
+ * replaces the readout table.
+ */
+export function Panel({ view, onClose }: PanelProps): ReactElement {
+  const { entries, mode, actions } = view;
   const now = useNow(1000);
 
   return (
@@ -29,7 +55,7 @@ export function Panel({ onClose }: PanelProps): ReactElement {
       <header className="header">
         <span className="title">SWR Devtools</span>
         <span className="mode">
-          {entries.length} keys ({store.getMode()})
+          {entries.length} keys ({mode})
         </span>
         <span className="header-actions">
           <button
