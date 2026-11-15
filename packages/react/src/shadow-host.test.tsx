@@ -35,6 +35,9 @@ describe('<ShadowHost />', () => {
     expect(css).toContain('max-width: calc(100vw - 40px)');
     // Lets touch drags resize the panel instead of scrolling the page.
     expect(css).toContain('touch-action: none');
+    // Narrow key rows wrap, keeping room for the key, instead of overflowing.
+    expect(css).toMatch(/\.key-row \{[^}]*flex-wrap: wrap/);
+    expect(css).toMatch(/\.key \{[^}]*flex: 1 1 128px/);
     for (const token of ['color-bg', 'space-1', 'radius-sm', 'font-sans', 'color-error']) {
       expect(css).toContain(`--swr-dt-${token}:`);
     }

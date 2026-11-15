@@ -5,8 +5,9 @@ import {
   type CacheEntry,
   type CacheObserverMode
 } from '@swr-devtools-react/core';
-import { useEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
+import { useMemo, useSyncExternalStore, type ReactElement } from 'react';
 import { useSWRConfig } from 'swr';
+import { KeyList } from './key-list.tsx';
 
 /** The live cache, and the actions on it, as the panel shows them. */
 export interface CacheView {
@@ -42,13 +43,9 @@ export interface PanelProps {
   onClose?: () => void;
 }
 
-/**
- * The panel's content: a header, and the cache readout. The key list (#12)
- * replaces the readout table.
- */
+/** The panel's content: a header, and the key list. */
 export function Panel({ view, onClose }: PanelProps): ReactElement {
   const { entries, mode, actions } = view;
-  const now = useNow(1000);
 
   return (
     <div className="panel-content">
@@ -76,55 +73,8 @@ export function Panel({ view, onClose }: PanelProps): ReactElement {
         </span>
       </header>
       <div className="body">
-        <table>
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Kind</th>
-              <th>Status</th>
-              <th>Updated</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry) => (
-              <tr key={entry.key}>
-                <td className="key">{entry.label}</td>
-                <td>{entry.kind}</td>
-                <td className="status" data-status={entry.status}>
-                  {entry.status}
-                </td>
-                <td>{formatAge(now - entry.updatedAt)}</td>
-                <td className="actions">
-                  <button type="button" onClick={() => void actions.revalidate(entry.key)}>
-                    Revalidate
-                  </button>
-                  <button type="button" onClick={() => void actions.remove(entry.key)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <KeyList entries={entries} actions={actions} />
       </div>
     </div>
   );
-}
-
-function useNow(interval: number): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), interval);
-    return () => clearInterval(timer);
-  }, [interval]);
-  return now;
-}
-
-function formatAge(ms: number): string {
-  const seconds = Math.max(0, Math.floor(ms / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  return `${Math.floor(minutes / 60)}h ago`;
 }

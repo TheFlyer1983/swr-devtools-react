@@ -35,7 +35,7 @@ function renderTwoKeys() {
   return renderTwoKeysIn().cache;
 }
 
-/** The readout renders in a shadow root, which `screen` queries don't reach. */
+/** The panel renders in a shadow root, which `screen` queries don't reach. */
 function panel() {
   const root = document
     .querySelector('[data-swr-devtools]')
@@ -45,12 +45,16 @@ function panel() {
 }
 
 function rowFor(label: string): HTMLElement {
-  const row = panel().getByText(label).closest('tr');
+  const row = panel().getByText(label).closest('li');
   if (!row) throw new Error(`No row for ${label}`);
   return row;
 }
 
-describe('<SWRDevtoolsPanel /> (temporary readout)', () => {
+function ageOf(label: string): HTMLElement {
+  return within(rowFor(label)).getByText(/ago$/);
+}
+
+describe('<SWRDevtoolsPanel />', () => {
   it('lists keys already in the cache', () => {
     const cache: Cache = new Map([['/api/user', { data: 'Ada' }]]);
     render(
@@ -59,7 +63,70 @@ describe('<SWRDevtoolsPanel /> (temporary readout)', () => {
       </Wrapper>
     );
 
-    expect(within(rowFor('/api/user')).getByText('success')).toBeInTheDocument();
+    expect(within(rowFor('/api/user')).getByText('Success')).toBeInTheDocument();
+  });
+
+  it('lists the keys under one labelled list', () => {
+    renderTwoKeys();
+
+    const list = panel().getByRole('list', { name: 'Cache keys' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+  });
+
+  it('says so when the cache is empty', () => {
+    render(
+      <Wrapper cache={new Map()}>
+        <SWRDevtoolsPanel />
+      </Wrapper>
+    );
+
+    expect(panel().getByText('No keys in the cache yet.')).toBeInTheDocument();
+    expect(panel().queryByRole('list')).not.toBeInTheDocument();
+  });
+
+  it('badges each status, with its name as well as its colour', () => {
+    const cache: Cache = new Map<string, object>([
+      ['/loading', { isLoading: true, isValidating: true }],
+      ['/validating', { data: 1, isValidating: true }],
+      ['/success', { data: 1 }],
+      ['/error', { error: new Error('boom') }],
+      ['/idle', {}]
+    ]);
+    render(
+      <Wrapper cache={cache}>
+        <SWRDevtoolsPanel />
+      </Wrapper>
+    );
+
+    for (const [key, name] of [
+      ['/loading', 'Loading'],
+      ['/validating', 'Validating'],
+      ['/success', 'Success'],
+      ['/error', 'Error'],
+      ['/idle', 'Idle']
+    ] as const) {
+      const badge = within(rowFor(key)).getByText(name);
+      expect(badge).toHaveClass('badge');
+      expect(badge).toHaveAttribute('data-status', name.toLowerCase());
+    }
+  });
+
+  it('shows how long ago each key was updated, and keeps it current', () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+    renderTwoKeys();
+
+    expect(ageOf('/api/user')).toHaveTextContent('0s ago');
+    expect(ageOf('/api/user').tagName).toBe('TIME');
+    expect(ageOf('/api/user')).toHaveAttribute('dateTime', new Date(1_000_000).toISOString());
+
+    now.mockReturnValue(1_090_000);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(ageOf('/api/user')).toHaveTextContent('1m ago');
+    vi.useRealTimers();
   });
 
   it('updates live as a hook fetches', async () => {
@@ -72,17 +139,34 @@ describe('<SWRDevtoolsPanel /> (temporary readout)', () => {
       </Wrapper>
     );
 
-    expect(await within(rowFor('/api/user')).findByText('loading')).toBeInTheDocument();
+    expect(await within(rowFor('/api/user')).findByText('Loading')).toBeInTheDocument();
 
     await act(async () => resolve?.('Ada'));
 
-    expect(await within(rowFor('/api/user')).findByText('success')).toBeInTheDocument();
+    expect(await within(rowFor('/api/user')).findByText('Success')).toBeInTheDocument();
   });
 
-  it('shows readable labels and kinds', () => {
+  it('updates live when a fetch fails', async () => {
+    let reject: ((error: Error) => void) | undefined;
+    const fetcher = () => new Promise<string>((_, r) => (reject = r));
+    render(
+      <Wrapper cache={new Map()}>
+        <User fetcher={fetcher} />
+        <SWRDevtoolsPanel />
+      </Wrapper>
+    );
+    expect(await within(rowFor('/api/user')).findByText('Loading')).toBeInTheDocument();
+
+    await act(async () => reject?.(new Error('boom')));
+
+    expect(await within(rowFor('/api/user')).findByText('Error')).toBeInTheDocument();
+  });
+
+  it('shows readable labels, and labels infinite and subscription keys', () => {
     const cache: Cache = new Map([
       ['@"/api/posts",2,', { data: [] }],
-      ['$inf$/api/feed?page=1', { data: [] }]
+      ['$inf$/api/feed?page=1', { data: [] }],
+      ['$sub$/ws/prices', { data: 1 }]
     ]);
     render(
       <Wrapper cache={cache}>
@@ -90,8 +174,9 @@ describe('<SWRDevtoolsPanel /> (temporary readout)', () => {
       </Wrapper>
     );
 
-    expect(rowFor('["/api/posts", 2]')).toBeInTheDocument();
-    expect(within(rowFor('/api/feed?page=1')).getByText('infinite')).toBeInTheDocument();
+    expect(within(rowFor('["/api/posts", 2]')).queryByText(/infinite|subscription/i)).toBeNull();
+    expect(within(rowFor('/api/feed?page=1')).getByText('Infinite')).toBeInTheDocument();
+    expect(within(rowFor('/ws/prices')).getByText('Subscription')).toBeInTheDocument();
   });
 
   it('updates when a key is changed with mutate', async () => {
