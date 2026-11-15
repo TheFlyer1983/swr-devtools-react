@@ -1,0 +1,10 @@
+{
+  // For editors and `pnpm typecheck`. Next uses tsconfig.next.json (see next.config.ts).
+  "extends": "./tsconfig.next.json",
+  "compilerOptions": {
+    // Typecheck against the devtools' source, so it doesn't depend on `pnpm build`.
+    "paths": {
+      "swr-devtools-react": ["../../packages/react/src/index.ts"]
+    }
+  }
+}

@@ -15,10 +15,15 @@
     "builtin": true,
     "browser": true
   },
-  "ignorePatterns": ["**/dist/**", "**/coverage/**"],
+  "ignorePatterns": ["**/dist/**", "**/coverage/**", "**/.next/**", "**/next-env.d.ts"],
   "overrides": [
     {
-      "files": ["**/vitest.setup.ts", "playgrounds/*/src/main.tsx"],
+      "files": [
+        "**/vitest.setup.ts",
+        "playgrounds/*/src/main.tsx",
+        "playgrounds/next/app/layout.tsx",
+        "playgrounds/next/pages/_app.tsx"
+      ],
       "rules": {
         "import/no-unassigned-import": "off"
       }

@@ -50,8 +50,9 @@ export async function fetcher(key: PlaygroundKey): Promise<unknown> {
     const info = await res.text().then(parseJsonOrText);
     throw new FetchError(`Request failed with ${res.status}`, res.status, info);
   }
-  // Vite answers unknown paths with 200 + index.html, so a mistyped URL
-  // "succeeds". Say so plainly instead of failing with a JSON SyntaxError.
+  // Dev servers can answer unknown paths with 200 + an HTML page, so a
+  // mistyped URL "succeeds". Say so plainly instead of failing with a JSON
+  // SyntaxError.
   const type = res.headers.get('content-type') ?? '';
   if (!type.includes('application/json')) {
     throw new FetchError(

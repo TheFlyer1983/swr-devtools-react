@@ -1,0 +1,24 @@
+{
+  "name": "@swr-devtools-react/playground-shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Scenarios, fetcher, mock API routes and styles shared by the playgrounds. Shipped as TypeScript source; each playground's bundler compiles it.",
+  "type": "module",
+  "exports": {
+    "./app": "./src/App.tsx",
+    "./fetcher": "./src/fetcher.ts",
+    "./mock-routes": "./src/mock-routes.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "swr": "^2.5.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "typescript": "7.0.2"
+  }
+}

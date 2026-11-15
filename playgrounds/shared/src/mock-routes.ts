@@ -1,12 +1,17 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { Plugin } from 'vite';
-
 /**
- * A tiny mock API served by the Vite dev server, so the playground makes
- * real HTTP requests (visible in the browser's Network tab) without a backend.
+ * The playgrounds' mock API, shared by Vite (a dev-server plugin) and Next.js
+ * (a route handler). The app makes real HTTP requests, visible in the
+ * browser's Network tab, without a backend.
  */
 
-type Handler = (url: URL) => { status?: number; delay?: number; body: unknown };
+/** A mock answer: the HTTP status (200 if left out), a delay in ms, and a JSON body. */
+export interface MockResponse {
+  status?: number;
+  delay?: number;
+  body: unknown;
+}
+
+type Handler = (url: URL) => MockResponse;
 
 const SLOW_DELAY_MS = 2000;
 const FEED_PAGE_SIZE = 5;
@@ -66,37 +71,15 @@ const routes: Record<string, Handler> = {
   }
 };
 
-function send(res: ServerResponse, status: number, body: unknown) {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(body));
-}
-
-function handleMockRequest(req: IncomingMessage, res: ServerResponse, next: () => void) {
-  const url = new URL(req.url ?? '/', 'http://localhost');
+/**
+ * The mock answer for a request URL, a 404 for an unknown `/api/` path, or
+ * `undefined` for anything else, so the dev server can serve it as usual.
+ */
+export function resolveMock(url: URL): MockResponse | undefined {
   const handler = routes[url.pathname];
-  if (!handler) {
-    if (url.pathname.startsWith('/api/')) {
-      send(res, 404, { error: `No mock for ${url.pathname}` });
-      return;
-    }
-    next();
-    return;
+  if (handler) return handler(url);
+  if (url.pathname.startsWith('/api/')) {
+    return { status: 404, body: { error: `No mock for ${url.pathname}` } };
   }
-  const { status = 200, delay = 0, body } = handler(url);
-  setTimeout(() => send(res, status, body), delay);
-}
-
-export function mockApi(): Plugin {
-  return {
-    name: 'playground-mock-api',
-    // `vite` (dev server)
-    configureServer(server) {
-      server.middlewares.use(handleMockRequest);
-    },
-    // `vite preview` (serves the production build)
-    configurePreviewServer(server) {
-      server.middlewares.use(handleMockRequest);
-    }
-  };
+  return undefined;
 }
