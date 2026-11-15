@@ -31,8 +31,17 @@ function renderTwoKeys() {
   return cache;
 }
 
+/** The readout renders in a shadow root, which `screen` queries don't reach. */
+function panel() {
+  const root = document
+    .querySelector('[data-swr-devtools]')
+    ?.shadowRoot?.querySelector<HTMLElement>('.root');
+  if (!root) throw new Error('Panel not rendered');
+  return within(root);
+}
+
 function rowFor(label: string): HTMLElement {
-  const row = screen.getByText(label).closest('tr');
+  const row = panel().getByText(label).closest('tr');
   if (!row) throw new Error(`No row for ${label}`);
   return row;
 }
@@ -94,7 +103,7 @@ describe('<SWRDevtools /> (temporary readout)', () => {
       screen.getByRole('button', { name: 'add' }).click();
     });
 
-    expect(await screen.findByText('/api/new')).toBeInTheDocument();
+    expect(await panel().findByText('/api/new')).toBeInTheDocument();
   });
 
   it('deletes a key from its row', async () => {
@@ -112,14 +121,14 @@ describe('<SWRDevtools /> (temporary readout)', () => {
       within(rowFor('/api/user')).getByRole('button', { name: 'Delete' }).click();
     });
 
-    expect(screen.queryByText('/api/user')).not.toBeInTheDocument();
+    expect(panel().queryByText('/api/user')).not.toBeInTheDocument();
     expect(rowFor('/api/posts')).toBeInTheDocument();
   });
 
   it("doesn't submit a form it sits inside", () => {
     renderTwoKeys();
 
-    for (const button of screen.getAllByRole('button')) {
+    for (const button of panel().getAllByRole('button')) {
       expect(button).toHaveAttribute('type', 'button');
     }
   });
@@ -134,11 +143,11 @@ describe('<SWRDevtools /> (temporary readout)', () => {
       renderTwoKeys();
 
       await act(async () => {
-        screen.getByRole('button', { name: 'Clear all' }).click();
+        panel().getByRole('button', { name: 'Clear all' }).click();
       });
 
       expect(confirm).toHaveBeenCalledOnce();
-      expect(screen.getByText(/0 keys/)).toBeInTheDocument();
+      expect(panel().getByText(/0 keys/)).toBeInTheDocument();
     });
 
     it('keeps the cache when cancelled', async () => {
@@ -146,11 +155,11 @@ describe('<SWRDevtools /> (temporary readout)', () => {
       const cache = renderTwoKeys();
 
       await act(async () => {
-        screen.getByRole('button', { name: 'Clear all' }).click();
+        panel().getByRole('button', { name: 'Clear all' }).click();
       });
 
       expect([...cache.keys()]).toEqual(['/api/user', '/api/posts']);
-      expect(screen.getByText(/2 keys/)).toBeInTheDocument();
+      expect(panel().getByText(/2 keys/)).toBeInTheDocument();
     });
   });
 

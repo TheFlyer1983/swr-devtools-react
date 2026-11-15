@@ -1,6 +1,7 @@
 import { createCacheActions, createCacheStore } from '@swr-devtools-react/core';
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { useSWRConfig } from 'swr';
+import { ShadowHost } from './shadow-host.tsx';
 
 export interface SWRDevtoolsProps {
   /** Start with the panel open. */
@@ -12,6 +13,14 @@ export interface SWRDevtoolsProps {
  * #7, #8 and #9 can be checked in the playground. The panel shell (#11) and key list (#12) replace it.
  */
 export function SWRDevtools({ initialIsOpen = false }: SWRDevtoolsProps): ReactElement {
+  return (
+    <ShadowHost>
+      <Readout initialIsOpen={initialIsOpen} />
+    </ShadowHost>
+  );
+}
+
+function Readout({ initialIsOpen }: { initialIsOpen: boolean }): ReactElement {
   const config = useSWRConfig();
   const { cache } = config;
   // Creating the store only reads the cache; the patch is installed when
@@ -22,9 +31,10 @@ export function SWRDevtools({ initialIsOpen = false }: SWRDevtoolsProps): ReactE
   const now = useNow(1000);
 
   return (
-    <div data-swr-devtools="" data-open={initialIsOpen}>
-      <p>
-        SWR Devtools: {entries.length} keys ({store.getMode()}){' '}
+    <div className="root" data-open={initialIsOpen}>
+      <p className="header">
+        <span className="title">SWR Devtools: {entries.length} keys</span>
+        <span className="mode">({store.getMode()})</span>
         <button
           type="button"
           onClick={() => {
@@ -49,14 +59,16 @@ export function SWRDevtools({ initialIsOpen = false }: SWRDevtoolsProps): ReactE
         <tbody>
           {entries.map((entry) => (
             <tr key={entry.key}>
-              <td>{entry.label}</td>
+              <td className="key">{entry.label}</td>
               <td>{entry.kind}</td>
-              <td>{entry.status}</td>
+              <td className="status" data-status={entry.status}>
+                {entry.status}
+              </td>
               <td>{formatAge(now - entry.updatedAt)}</td>
-              <td>
+              <td className="actions">
                 <button type="button" onClick={() => void actions.revalidate(entry.key)}>
                   Revalidate
-                </button>{' '}
+                </button>
                 <button type="button" onClick={() => void actions.remove(entry.key)}>
                   Delete
                 </button>
