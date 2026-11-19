@@ -98,9 +98,77 @@ describe('getChildren', () => {
     ]);
   });
 
+  it("counts an error's fields without running their getters", () => {
+    const error = new Error('boom');
+    let reads = 0;
+    Object.defineProperty(error, 'info', {
+      enumerable: true,
+      get: () => {
+        reads += 1;
+        return 'detail';
+      }
+    });
+
+    expect(inspectValue(error).size).toBe(2);
+    expect(reads).toBe(0);
+  });
+
+  it('runs no getters outside the requested slice', () => {
+    const read: string[] = [];
+    const value = {};
+    for (const name of ['a', 'b', 'c']) {
+      Object.defineProperty(value, name, {
+        enumerable: true,
+        get: () => {
+          read.push(name);
+          return name;
+        }
+      });
+    }
+
+    expect(getChildren(value, 1, 2)).toEqual([{ name: 'b', value: 'b' }]);
+    expect(read).toEqual(['b']);
+  });
+
+  it('shows a getter that throws as a value, not an exception', () => {
+    const value = {
+      get broken(): never {
+        throw new TypeError('nope');
+      }
+    };
+
+    const [child] = getChildren(value);
+
+    expect(child?.name).toBe('broken');
+    expect(inspectValue(child?.value)).toEqual({
+      kind: 'thrown',
+      preview: '[Threw: TypeError: nope]'
+    });
+  });
+
+  it('stops iterating a map or set at the end of the slice', () => {
+    const seen: number[] = [];
+    const set = new Set<number>();
+    // Stands in for a huge set, recording how far it's iterated.
+    Object.defineProperty(set, Symbol.iterator, { value: () => countTo(1000, seen) });
+
+    expect(getChildren(set, 2, 4)).toEqual([
+      { name: '2', value: 2 },
+      { name: '3', value: 3 }
+    ]);
+    expect(seen).toEqual([0, 1, 2, 3]);
+  });
+
   it('gives leaves no children', () => {
     expect(getChildren('text')).toEqual([]);
     expect(getChildren(null)).toEqual([]);
     expect(getChildren(new Date())).toEqual([]);
   });
 });
+
+function* countTo(limit: number, seen: number[]): Generator<number> {
+  for (let i = 0; i < limit; i += 1) {
+    seen.push(i);
+    yield i;
+  }
+}

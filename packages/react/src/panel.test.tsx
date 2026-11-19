@@ -498,6 +498,36 @@ describe('<SWRDevtoolsPanel />', () => {
       expect(tree('Data').getByText('24999', { selector: '.json-value' })).toBeInTheDocument();
     });
 
+    it('keeps a property expanded when a sibling before it goes away', async () => {
+      function Update() {
+        const { mutate } = useSWRConfig();
+        return (
+          <button onClick={() => mutate('/api/user', { b: { y: 3 } }, { revalidate: false })}>
+            update
+          </button>
+        );
+      }
+      render(
+        <Wrapper cache={new Map([['/api/user', { data: { a: { x: 1 }, b: { y: 2 } } }]])}>
+          <Update />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+      select('/api/user');
+      fireEvent.click(tree('Data').getByRole('button', { name: /^b/ }));
+      expect(tree('Data').getByText('2')).toBeInTheDocument();
+
+      await act(async () => {
+        screen.getByRole('button', { name: 'update' }).click();
+      });
+
+      expect(tree('Data').getByRole('button', { name: /^b/ })).toHaveAttribute(
+        'aria-expanded',
+        'true'
+      );
+      expect(tree('Data').getByText('3')).toBeInTheDocument();
+    });
+
     it('shows circular references without looping', () => {
       const data: Record<string, unknown> = { name: 'loop' };
       data.self = data;

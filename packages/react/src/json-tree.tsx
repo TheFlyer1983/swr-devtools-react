@@ -108,12 +108,16 @@ function JsonRange({ value, start, end, depth, ancestors }: JsonRangeProps): Rea
   const count = end - start;
 
   if (count <= PAGE_SIZE) {
+    // Property names are unique and follow a property if the others change,
+    // so expanded state stays with it. Map entries can share a name, so
+    // they, like array and set items, are keyed by position.
+    const { kind } = inspectValue(value);
+    const byName = kind === 'object' || kind === 'error';
     return (
       <>
         {getChildren(value, start, end).map((child, i) => (
-          // Map entries can share a name, so they're keyed by position.
           <JsonNode
-            key={start + i}
+            key={byName ? child.name : start + i}
             name={child.name}
             value={child.value}
             depth={depth}

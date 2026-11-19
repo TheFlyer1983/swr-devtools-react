@@ -576,7 +576,8 @@ select:focus-visible {
   color: var(--swr-dt-color-accent);
 }
 
-.json-value[data-kind='error'] {
+.json-value[data-kind='error'],
+.json-value[data-kind='thrown'] {
   color: var(--swr-dt-color-error);
 }
 
