@@ -186,6 +186,16 @@ export const styles = `
   color: var(--swr-dt-color-muted);
 }
 
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--swr-dt-space-1);
+}
+
+.confirm-text {
+  font-size: var(--swr-dt-font-size-sm);
+}
+
 .header-actions {
   display: flex;
   gap: var(--swr-dt-space-1);
@@ -269,6 +279,24 @@ select:hover {
   border-color: var(--swr-dt-color-accent);
 }
 
+button[aria-disabled='true'] {
+  cursor: not-allowed;
+  color: var(--swr-dt-color-muted);
+}
+
+button[aria-disabled='true']:hover {
+  border-color: var(--swr-dt-color-border);
+}
+
+/* Destructive actions: Delete, and confirming Clear all. */
+button.danger {
+  color: var(--swr-dt-color-error);
+}
+
+button.danger:hover {
+  border-color: var(--swr-dt-color-error);
+}
+
 input {
   background: var(--swr-dt-color-bg);
 }
@@ -308,8 +336,8 @@ select:focus-visible {
   border-bottom: 1px solid var(--swr-dt-color-border);
 }
 
-/* In a narrow panel the key keeps 128px next to the badge, and the kind,
-   age and actions wrap onto a second line. */
+/* In a narrow panel the key keeps 128px next to the badge, and the kind
+   and age wrap onto a second line. */
 .key {
   flex: 1 1 128px;
   min-width: 0;
@@ -420,12 +448,6 @@ select:focus-visible {
   color: var(--swr-dt-color-muted);
 }
 
-.actions {
-  display: flex;
-  flex: none;
-  gap: var(--swr-dt-space-1);
-}
-
 .detail {
   min-height: 0;
   overflow: auto;
@@ -480,6 +502,12 @@ select:focus-visible {
 
 .detail-meta dd {
   margin: 0;
+}
+
+.detail-actions {
+  display: flex;
+  gap: var(--swr-dt-space-1);
+  margin-top: var(--swr-dt-space-3);
 }
 
 .detail-heading {

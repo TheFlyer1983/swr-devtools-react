@@ -58,6 +58,12 @@ function listedKeys(): (string | null)[] {
     .map((row) => row.querySelector('.key')?.textContent ?? null);
 }
 
+/** `toHaveFocus` reads `document.activeElement`, which stops at the shadow host. */
+function hasFocus(element: HTMLElement): boolean {
+  const root = element.getRootNode();
+  return root instanceof ShadowRoot && root.activeElement === element;
+}
+
 function ageOf(label: string): HTMLElement {
   return within(rowFor(label)).getByText(/ago$/);
 }
@@ -203,25 +209,6 @@ describe('<SWRDevtoolsPanel />', () => {
     expect(await panel().findByText('/api/new')).toBeInTheDocument();
   });
 
-  it('deletes a key from its row', async () => {
-    const cache: Cache = new Map([
-      ['/api/user', { data: 'Ada' }],
-      ['/api/posts', { data: [] }]
-    ]);
-    render(
-      <Wrapper cache={cache}>
-        <SWRDevtoolsPanel />
-      </Wrapper>
-    );
-
-    await act(async () => {
-      within(rowFor('/api/user')).getByRole('button', { name: 'Delete' }).click();
-    });
-
-    expect(panel().queryByText('/api/user')).not.toBeInTheDocument();
-    expect(rowFor('/api/posts')).toBeInTheDocument();
-  });
-
   it("doesn't submit a form it sits inside", () => {
     renderTwoKeys();
 
@@ -231,32 +218,56 @@ describe('<SWRDevtoolsPanel />', () => {
   });
 
   describe('Clear all', () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
+    const clearAll = () => panel().getByRole('button', { name: 'Clear all' });
+    const confirmation = () => within(panel().getByRole('group', { name: 'Confirm Clear all' }));
+
+    it('asks first, and moves focus to Cancel', () => {
+      const cache = renderTwoKeys();
+
+      fireEvent.click(clearAll());
+
+      expect(confirmation().getByText('Clear every key?')).toBeInTheDocument();
+      expect(hasFocus(confirmation().getByRole('button', { name: 'Cancel' }))).toBe(true);
+      expect([...cache.keys()]).toEqual(['/api/user', '/api/posts']);
     });
 
     it('clears every key once confirmed', async () => {
-      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
       renderTwoKeys();
+      fireEvent.click(clearAll());
 
       await act(async () => {
-        panel().getByRole('button', { name: 'Clear all' }).click();
+        confirmation().getByRole('button', { name: 'Clear' }).click();
       });
 
-      expect(confirm).toHaveBeenCalledOnce();
       expect(panel().getByText(/0 keys/)).toBeInTheDocument();
+      expect(hasFocus(clearAll())).toBe(true);
     });
 
-    it('keeps the cache when cancelled', async () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
+    it('keeps the cache when cancelled, and returns focus to Clear all', () => {
       const cache = renderTwoKeys();
+      fireEvent.click(clearAll());
 
-      await act(async () => {
-        panel().getByRole('button', { name: 'Clear all' }).click();
-      });
+      fireEvent.click(confirmation().getByRole('button', { name: 'Cancel' }));
 
       expect([...cache.keys()]).toEqual(['/api/user', '/api/posts']);
-      expect(panel().getByText(/2 keys/)).toBeInTheDocument();
+      expect(panel().queryByRole('group', { name: 'Confirm Clear all' })).not.toBeInTheDocument();
+      expect(hasFocus(clearAll())).toBe(true);
+    });
+
+    it('cancels with Escape', () => {
+      const cache = renderTwoKeys();
+      fireEvent.click(clearAll());
+
+      fireEvent.keyDown(confirmation().getByRole('button', { name: 'Cancel' }), { key: 'Escape' });
+
+      expect([...cache.keys()]).toEqual(['/api/user', '/api/posts']);
+      expect(hasFocus(clearAll())).toBe(true);
+    });
+
+    it("doesn't take focus when the panel first renders", () => {
+      renderTwoKeys();
+
+      expect(hasFocus(clearAll())).toBe(false);
     });
   });
 
@@ -455,9 +466,84 @@ describe('<SWRDevtoolsPanel />', () => {
       expect(tree('Data').getByText('"x"')).toBeInTheDocument();
 
       await act(async () => {
-        within(rowFor('/api/new')).getByRole('button', { name: 'Delete' }).click();
+        detail().getByRole('button', { name: 'Delete' }).click();
       });
       expect(panel().queryByRole('region', { name: 'Key details' })).not.toBeInTheDocument();
+    });
+
+    it('deletes the key, leaving the others', async () => {
+      const cache = renderCache([
+        ['/api/user', { data: 'Ada' }],
+        ['/api/posts', { data: [] }]
+      ]);
+      select('/api/user');
+
+      await act(async () => {
+        detail().getByRole('button', { name: 'Delete' }).click();
+      });
+
+      expect([...cache.keys()]).toEqual(['/api/posts']);
+      expect(rowFor('/api/posts')).toBeInTheDocument();
+    });
+
+    it('revalidates the key through its hook', async () => {
+      let calls = 0;
+      const fetcher = () => Promise.resolve(`v${++calls}`);
+      render(
+        <Wrapper cache={new Map()}>
+          <User fetcher={fetcher} />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+      expect(await screen.findByText('user: v1')).toBeInTheDocument();
+      select('/api/user');
+
+      await act(async () => {
+        detail().getByRole('button', { name: 'Revalidate' }).click();
+      });
+
+      expect(await screen.findByText('user: v2')).toBeInTheDocument();
+    });
+
+    it('disables Revalidate for subscription keys, and says why', async () => {
+      // A fetcher on the $sub$ key itself, so a click that got through would
+      // show up as a second fetch.
+      let calls = 0;
+      function Feed() {
+        const { data } = useSWR('$sub$/api/feed', () => Promise.resolve(`v${++calls}`));
+        return <p>feed: {data ?? '…'}</p>;
+      }
+      render(
+        <Wrapper cache={new Map()}>
+          <Feed />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+      expect(await screen.findByText('feed: v1')).toBeInTheDocument();
+      select('/api/feed');
+
+      const revalidate = detail().getByRole('button', { name: 'Revalidate' });
+      expect(revalidate).toHaveAttribute('aria-disabled', 'true');
+      expect(revalidate).toHaveAccessibleDescription(/no fetcher/);
+
+      await act(async () => {
+        revalidate.click();
+      });
+      expect(calls).toBe(1);
+    });
+
+    it('keeps Revalidate enabled for standard and infinite keys', () => {
+      renderCache([
+        ['/api/user', { data: 'Ada' }],
+        ['$inf$/api/page/0', { data: [] }]
+      ]);
+
+      for (const label of ['/api/user', '/api/page/0']) {
+        select(label);
+        expect(detail().getByRole('button', { name: 'Revalidate' })).not.toHaveAttribute(
+          'aria-disabled'
+        );
+      }
     });
 
     it('opens the root and keeps deeper nodes collapsed until clicked', () => {

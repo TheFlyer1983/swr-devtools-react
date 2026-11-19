@@ -1,4 +1,4 @@
-import type { CacheActions, CacheEntry, KeyKind, KeyStatus } from '@swr-devtools-react/core';
+import type { CacheEntry, KeyKind, KeyStatus } from '@swr-devtools-react/core';
 import { useEffect, useState, type ReactElement } from 'react';
 
 const STATUS_NAMES: Record<KeyStatus, string> = {
@@ -26,7 +26,6 @@ export function StatusBadge({ status }: { status: KeyStatus }): ReactElement {
 
 export interface KeyListProps {
   entries: CacheEntry[];
-  actions: CacheActions;
   /** The key whose details are showing, if any. */
   selectedKey: string | null;
   /** Called with a key to show its details, or `null` to hide them. */
@@ -34,7 +33,7 @@ export interface KeyListProps {
 }
 
 /** The given keys, each with its status and how long ago it was updated. */
-export function KeyList({ entries, actions, selectedKey, onSelect }: KeyListProps): ReactElement {
+export function KeyList({ entries, selectedKey, onSelect }: KeyListProps): ReactElement {
   const now = useNow(1000);
 
   return (
@@ -64,15 +63,6 @@ export function KeyList({ entries, actions, selectedKey, onSelect }: KeyListProp
           >
             {formatAge(now - entry.updatedAt)}
           </time>
-          {/* Moves to the key detail view with #15. */}
-          <span className="actions">
-            <button type="button" onClick={() => void actions.revalidate(entry.key)}>
-              Revalidate
-            </button>
-            <button type="button" onClick={() => void actions.remove(entry.key)}>
-              Delete
-            </button>
-          </span>
         </li>
       ))}
     </ul>

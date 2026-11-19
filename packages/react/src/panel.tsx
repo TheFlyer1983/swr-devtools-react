@@ -8,7 +8,15 @@ import {
   type CacheObserverMode,
   type SortBy
 } from '@swr-devtools-react/core';
-import { useId, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactElement
+} from 'react';
 import { useSWRConfig } from 'swr';
 import { KeyDetail } from './key-detail.tsx';
 import { KeyList } from './key-list.tsx';
@@ -82,16 +90,7 @@ export function Panel({ view, onClose }: PanelProps): ReactElement {
           {isFiltered ? `${visible.length} of ${entries.length}` : entries.length} keys ({mode})
         </span>
         <span className="header-actions">
-          <button
-            type="button"
-            onClick={() => {
-              // The spec puts Clear all behind a confirmation. #15 replaces
-              // this with the panel's own dialog.
-              if (window.confirm('Clear every key from the SWR cache?')) void actions.clearAll();
-            }}
-          >
-            Clear all
-          </button>
+          <ClearAll onConfirm={() => void actions.clearAll()} />
           {onClose && (
             <button type="button" aria-label="Close SWR Devtools" onClick={onClose}>
               Close
@@ -137,7 +136,6 @@ export function Panel({ view, onClose }: PanelProps): ReactElement {
             ) : (
               <KeyList
                 entries={visible}
-                actions={actions}
                 selectedKey={selected ? selected.key : null}
                 onSelect={setSelectedKey}
               />
@@ -145,10 +143,72 @@ export function Panel({ view, onClose }: PanelProps): ReactElement {
           </div>
           {selected && (
             // Keyed so a different key's tree starts collapsed again.
-            <KeyDetail key={selected.key} entry={selected} onClose={() => setSelectedKey(null)} />
+            <KeyDetail
+              key={selected.key}
+              entry={selected}
+              actions={actions}
+              onClose={() => setSelectedKey(null)}
+            />
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Clear all, behind a confirmation in the header. The panel's own, rather
+ * than `window.confirm`, which blocks the page and can be switched off.
+ */
+function ClearAll({ onConfirm }: { onConfirm: () => void }): ReactElement {
+  const [confirming, setConfirming] = useState(false);
+  const clearRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  // Only move focus after the user acts, not when the panel first renders.
+  const hasActed = useRef(false);
+
+  useEffect(() => {
+    if (!hasActed.current) return;
+    // Cancel is the safe default, and focus returns to Clear all afterwards.
+    (confirming ? cancelRef : clearRef).current?.focus();
+  }, [confirming]);
+
+  const setAndFocus = (next: boolean) => {
+    hasActed.current = true;
+    setConfirming(next);
+  };
+
+  if (!confirming) {
+    return (
+      <button type="button" ref={clearRef} onClick={() => setAndFocus(true)}>
+        Clear all
+      </button>
+    );
+  }
+
+  return (
+    <span
+      className="confirm"
+      role="group"
+      aria-label="Confirm Clear all"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') setAndFocus(false);
+      }}
+    >
+      <span className="confirm-text">Clear every key?</span>
+      <button
+        type="button"
+        className="danger"
+        onClick={() => {
+          onConfirm();
+          setAndFocus(false);
+        }}
+      >
+        Clear
+      </button>
+      <button type="button" ref={cancelRef} onClick={() => setAndFocus(false)}>
+        Cancel
+      </button>
+    </span>
   );
 }
