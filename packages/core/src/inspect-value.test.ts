@@ -146,6 +146,17 @@ describe('getChildren', () => {
     });
   });
 
+  it('previews an error whose name or message getter throws, without throwing', () => {
+    const error = new Error('boom');
+    Object.defineProperty(error, 'message', {
+      get: () => {
+        throw new Error('no message');
+      }
+    });
+
+    expect(inspectValue(error).preview).toBe('[unreadable error]');
+  });
+
   it('stops iterating a map or set at the end of the slice', () => {
     const seen: number[] = [];
     const set = new Set<number>();

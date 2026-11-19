@@ -1,5 +1,5 @@
 import { getChildren, inspectValue } from '@swr-devtools-react/core';
-import { useState, type ReactElement } from 'react';
+import { Component, useState, type ReactElement, type ReactNode } from 'react';
 
 /** Containers this shallow start open: the root only. */
 const OPEN_DEPTH = 1;
@@ -24,10 +24,54 @@ export interface JsonTreeProps {
  */
 export function JsonTree({ value, label }: JsonTreeProps): ReactElement {
   return (
-    <ul className="json-tree" aria-label={label}>
-      <JsonNode value={value} depth={0} ancestors={[]} />
-    </ul>
+    <TreeBoundary value={value}>
+      <ul className="json-tree" aria-label={label}>
+        <JsonNode value={value} depth={0} ancestors={[]} />
+      </ul>
+    </TreeBoundary>
   );
+}
+
+interface TreeBoundaryProps {
+  value: unknown;
+  children: ReactNode;
+}
+
+/**
+ * App data can do anything when read: a Proxy can throw from any trap. If
+ * showing it fails, this says so in place of the tree rather than taking
+ * the panel down. It tries again when the value changes.
+ */
+interface TreeBoundaryState {
+  failure: string | null;
+  /** The value the failure came from. */
+  value: unknown;
+}
+
+class TreeBoundary extends Component<TreeBoundaryProps, TreeBoundaryState> {
+  override state: TreeBoundaryState = { failure: null, value: this.props.value };
+
+  static getDerivedStateFromError(error: unknown): Partial<TreeBoundaryState> {
+    let failure = 'unknown error';
+    try {
+      failure = error instanceof Error ? error.message : String(error);
+    } catch {
+      // Keep the placeholder.
+    }
+    return { failure };
+  }
+
+  static getDerivedStateFromProps(
+    props: TreeBoundaryProps,
+    state: TreeBoundaryState
+  ): Partial<TreeBoundaryState> | null {
+    return props.value === state.value ? null : { failure: null, value: props.value };
+  }
+
+  override render(): ReactNode {
+    if (this.state.failure === null) return this.props.children;
+    return <p className="json-unreadable">Couldn't show this value: {this.state.failure}</p>;
+  }
 }
 
 interface JsonNodeProps {

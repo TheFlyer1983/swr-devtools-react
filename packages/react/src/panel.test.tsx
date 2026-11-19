@@ -528,6 +528,25 @@ describe('<SWRDevtoolsPanel />', () => {
       expect(tree('Data').getByText('3')).toBeInTheDocument();
     });
 
+    it("says so in place of a tree it can't show, and keeps the panel working", () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const data = new Proxy(
+        {},
+        {
+          ownKeys() {
+            throw new Error('revoked');
+          }
+        }
+      );
+      renderCache([['/api/proxy', { data }]]);
+
+      select('/api/proxy');
+
+      expect(detail().getByText("Couldn't show this value: revoked")).toBeInTheDocument();
+      expect(rowFor('/api/proxy')).toBeInTheDocument();
+      vi.restoreAllMocks();
+    });
+
     it('shows circular references without looping', () => {
       const data: Record<string, unknown> = { name: 'loop' };
       data.self = data;

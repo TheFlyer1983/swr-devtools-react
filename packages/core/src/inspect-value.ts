@@ -70,7 +70,7 @@ export function inspectValue(value: unknown): InspectedValue {
   if (value instanceof Error) {
     return {
       kind: 'error',
-      preview: `${value.name}: ${value.message}`,
+      preview: describeError(value),
       size: errorFieldNames(value).length
     };
   }
@@ -132,8 +132,16 @@ function readProperty(target: object, name: string): unknown {
   }
 }
 
+/**
+ * An error as `Name: message`. Both are normally plain values, but either
+ * can be a getter that throws; that gives a placeholder, not an exception.
+ */
 function describeError(error: unknown): string {
-  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  try {
+    return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  } catch {
+    return '[unreadable error]';
+  }
 }
 
 /** The items of an iterable from `start` to `end`, without iterating past `end`. */

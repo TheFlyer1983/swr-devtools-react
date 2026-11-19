@@ -593,4 +593,10 @@ select:focus-visible {
 .json-range {
   color: var(--swr-dt-color-muted);
 }
+
+.json-unreadable {
+  margin: 0;
+  font-size: var(--swr-dt-font-size-sm);
+  color: var(--swr-dt-color-error);
+}
 `;
