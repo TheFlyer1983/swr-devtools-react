@@ -15,14 +15,15 @@ pnpm install
 pnpm check   # lint, format check, typecheck, test, build
 ```
 
-| Script                         | What it does                              |
-| ------------------------------ | ----------------------------------------- |
-| `pnpm dev`                     | Vite playground at http://localhost:5173  |
-| `pnpm lint`                    | oxlint                                    |
-| `pnpm format` / `format:check` | oxfmt                                     |
-| `pnpm typecheck`               | `tsc --noEmit` in every package           |
-| `pnpm test` / `test:watch`     | Vitest                                    |
-| `pnpm build`                   | Builds the published packages with tsdown |
+| Script                         | What it does                                                         |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `pnpm dev`                     | Vite playground at http://localhost:5173                             |
+| `pnpm dev:next`                | Next.js playground at http://localhost:3100 (run `pnpm build` first) |
+| `pnpm lint`                    | oxlint                                                               |
+| `pnpm format` / `format:check` | oxfmt                                                                |
+| `pnpm typecheck`               | `tsc --noEmit` in every package                                      |
+| `pnpm test` / `test:watch`     | Vitest                                                               |
+| `pnpm build`                   | Builds the published packages with tsdown                            |
 
 ## Licence
 

@@ -47,8 +47,9 @@ packages/
              Published as `swr-devtools-react`.
   tanstack/  (v0.2) Registers <SWRDevtoolsPanel /> as a TanStack Devtools plugin.
 playgrounds/
-  vite/      React + Vite + SWR with mock endpoints
-  next/      Next.js App Router + SWR
+  shared/    Scenarios, fetcher, mock API routes and styles both playgrounds use
+  vite/      React + Vite + SWR, using the devtools' source
+  next/      Next.js App Router and Pages Router + SWR, using the devtools' built dist
 docs/
 ```
 

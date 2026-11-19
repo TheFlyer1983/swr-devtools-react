@@ -11,5 +11,5 @@
       "swr-devtools-react": ["../../packages/react/src/index.ts"]
     }
   },
-  "include": ["src", "mock", "vite.config.ts"]
+  "include": ["src", "mock-api.ts", "vite.config.ts"]
 }

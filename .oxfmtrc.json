@@ -4,5 +4,11 @@
   "useTabs": false,
   "trailingComma": "none",
   "singleQuote": true,
-  "ignorePatterns": ["**/dist/**", "**/coverage/**", "pnpm-lock.yaml"]
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/coverage/**",
+    "**/.next/**",
+    "**/next-env.d.ts",
+    "pnpm-lock.yaml"
+  ]
 }

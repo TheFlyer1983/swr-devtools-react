@@ -6,3 +6,5 @@ coverage/
 .DS_Store
 .env*
 !.env.example
+.next/
+next-env.d.ts
