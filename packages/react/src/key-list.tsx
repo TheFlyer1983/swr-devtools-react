@@ -10,31 +10,52 @@ const STATUS_NAMES: Record<KeyStatus, string> = {
 };
 
 /** Standard keys get no label; they're most of the list. */
-const KIND_NAMES: Record<Exclude<KeyKind, 'standard'>, string> = {
+export const KIND_NAMES: Record<Exclude<KeyKind, 'standard'>, string> = {
   infinite: 'Infinite',
   subscription: 'Subscription'
 };
 
+/** A key's status, by name as well as colour, so it doesn't rely on colour. */
+export function StatusBadge({ status }: { status: KeyStatus }): ReactElement {
+  return (
+    <span className="badge" data-status={status}>
+      {STATUS_NAMES[status]}
+    </span>
+  );
+}
+
 export interface KeyListProps {
   entries: CacheEntry[];
   actions: CacheActions;
+  /** The key whose details are showing, if any. */
+  selectedKey: string | null;
+  /** Called with a key to show its details, or `null` to hide them. */
+  onSelect: (key: string | null) => void;
 }
 
 /** The given keys, each with its status and how long ago it was updated. */
-export function KeyList({ entries, actions }: KeyListProps): ReactElement {
+export function KeyList({ entries, actions, selectedKey, onSelect }: KeyListProps): ReactElement {
   const now = useNow(1000);
 
   return (
     <ul className="key-list" aria-label="Cache keys">
       {entries.map((entry) => (
-        <li key={entry.key} className="key-row">
-          {/* The name is shown, not only the colour, so status doesn't rely on colour. */}
-          <span className="badge" data-status={entry.status}>
-            {STATUS_NAMES[entry.status]}
-          </span>
-          <span className="key" title={entry.label}>
+        <li
+          key={entry.key}
+          className="key-row"
+          data-selected={entry.key === selectedKey ? '' : undefined}
+        >
+          <StatusBadge status={entry.status} />
+          {/* Clicking the selected key again hides its details. */}
+          <button
+            type="button"
+            className="key"
+            title={entry.label}
+            aria-pressed={entry.key === selectedKey}
+            onClick={() => onSelect(entry.key === selectedKey ? null : entry.key)}
+          >
             {entry.label}
-          </span>
+          </button>
           {entry.kind !== 'standard' && <span className="kind">{KIND_NAMES[entry.kind]}</span>}
           <time
             className="age"
