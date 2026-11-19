@@ -10,6 +10,7 @@ import {
 } from '@swr-devtools-react/core';
 import { useId, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { useSWRConfig } from 'swr';
+import { KeyDetail } from './key-detail.tsx';
 import { KeyList } from './key-list.tsx';
 
 /** The live cache, and the actions on it, as the panel shows them. */
@@ -52,7 +53,10 @@ const SORT_OPTIONS: { value: SortBy; name: string }[] = [
   { value: 'updated', name: 'Last updated' }
 ];
 
-/** The panel's content: a header, a filter and sort bar, and the key list. */
+/**
+ * The panel's content: a header, a filter and sort bar, the key list and,
+ * once a key is selected, its details.
+ */
 export function Panel({ view, onClose }: PanelProps): ReactElement {
   const { entries, mode, actions } = view;
   // Sorting by key by default keeps rows still while keys revalidate.
@@ -63,6 +67,11 @@ export function Panel({ view, onClose }: PanelProps): ReactElement {
     [entries, query, sortBy]
   );
   const isFiltered = query.trim() !== '';
+  // Looked up in every entry, not only the visible ones, so filtering the
+  // list doesn't close the details. A deleted key's details close; they come
+  // back if the key does.
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const selected = entries.find((entry) => entry.key === selectedKey);
   const sortId = useId();
 
   return (
@@ -118,14 +127,27 @@ export function Panel({ view, onClose }: PanelProps): ReactElement {
           ))}
         </select>
       </div>
-      <div className="body">
-        {entries.length === 0 ? (
-          <p className="empty">No keys in the cache yet.</p>
-        ) : visible.length === 0 ? (
-          <p className="empty">No keys match “{query.trim()}”.</p>
-        ) : (
-          <KeyList entries={visible} actions={actions} />
-        )}
+      <div className="main">
+        <div className="split" data-detail={selected ? '' : undefined}>
+          <div className="body">
+            {entries.length === 0 ? (
+              <p className="empty">No keys in the cache yet.</p>
+            ) : visible.length === 0 ? (
+              <p className="empty">No keys match “{query.trim()}”.</p>
+            ) : (
+              <KeyList
+                entries={visible}
+                actions={actions}
+                selectedKey={selected ? selected.key : null}
+                onSelect={setSelectedKey}
+              />
+            )}
+          </div>
+          {selected && (
+            // Keyed so a different key's tree starts collapsed again.
+            <KeyDetail key={selected.key} entry={selected} onClose={() => setSelectedKey(null)} />
+          )}
+        </div>
       </div>
     </div>
   );

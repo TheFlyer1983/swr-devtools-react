@@ -45,7 +45,8 @@ function panel() {
 }
 
 function rowFor(label: string): HTMLElement {
-  const row = panel().getByText(label).closest('li');
+  const list = within(panel().getByRole('list', { name: 'Cache keys' }));
+  const row = list.getByText(label).closest('li');
   if (!row) throw new Error(`No row for ${label}`);
   return row;
 }
@@ -362,6 +363,216 @@ describe('<SWRDevtoolsPanel />', () => {
       sortBy('Last updated');
 
       expect(listedKeys()).toEqual(['/api/b', '/api/a']);
+    });
+  });
+
+  describe('key detail', () => {
+    function renderCache(entries: [string, object][]) {
+      const cache: Cache = new Map(entries);
+      render(
+        <Wrapper cache={cache}>
+          <AddKey />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+      return cache;
+    }
+
+    const select = (label: string) =>
+      fireEvent.click(within(rowFor(label)).getByRole('button', { name: label }));
+
+    const detail = () => within(panel().getByRole('region', { name: 'Key details' }));
+
+    const tree = (name: string) => within(detail().getByRole('list', { name }));
+
+    it('shows nothing until a key is selected', () => {
+      renderCache([['/api/user', { data: 'Ada' }]]);
+
+      expect(panel().queryByRole('region', { name: 'Key details' })).not.toBeInTheDocument();
+    });
+
+    it("shows the selected key's full key, status and data", () => {
+      renderCache([['@"/api/posts",2,', { data: { title: 'Hello' } }]]);
+
+      select('["/api/posts", 2]');
+
+      expect(detail().getByRole('heading', { name: '["/api/posts", 2]' })).toBeInTheDocument();
+      expect(detail().getByText('@"/api/posts",2,')).toBeInTheDocument();
+      expect(detail().getByText('Success')).toHaveClass('badge');
+      expect(tree('Data').getByText('"Hello"')).toBeInTheDocument();
+      expect(detail().queryByRole('list', { name: 'Error' })).not.toBeInTheDocument();
+    });
+
+    it("shows a key's error, with the fields a fetcher added", () => {
+      const error = Object.assign(new Error('Request failed'), { status: 500 });
+      renderCache([['/api/user', { error }]]);
+
+      select('/api/user');
+
+      expect(tree('Error').getByText('Error: Request failed')).toBeInTheDocument();
+      expect(tree('Error').getByText('500')).toBeInTheDocument();
+    });
+
+    it('marks the selected row, and hides the details when it is clicked again', () => {
+      renderCache([['/api/user', { data: 'Ada' }]]);
+      const key = within(rowFor('/api/user')).getByRole('button', { name: '/api/user' });
+
+      select('/api/user');
+      expect(key).toHaveAttribute('aria-pressed', 'true');
+
+      select('/api/user');
+      expect(key).toHaveAttribute('aria-pressed', 'false');
+      expect(panel().queryByRole('region', { name: 'Key details' })).not.toBeInTheDocument();
+    });
+
+    it('closes from its own close button', () => {
+      renderCache([['/api/user', { data: 'Ada' }]]);
+      select('/api/user');
+
+      fireEvent.click(detail().getByRole('button', { name: 'Close key details' }));
+
+      expect(panel().queryByRole('region', { name: 'Key details' })).not.toBeInTheDocument();
+    });
+
+    it('stays open while the list is filtered', () => {
+      renderCache([['/api/user', { data: 'Ada' }]]);
+      select('/api/user');
+
+      fireEvent.change(panel().getByRole('searchbox', { name: 'Filter keys' }), {
+        target: { value: 'nope' }
+      });
+
+      expect(detail().getByRole('heading', { name: '/api/user' })).toBeInTheDocument();
+    });
+
+    it('updates live, and closes when the key is deleted', async () => {
+      renderCache([['/api/new', { data: 'old' }]]);
+      select('/api/new');
+
+      await act(async () => {
+        screen.getByRole('button', { name: 'add' }).click();
+      });
+      expect(tree('Data').getByText('"x"')).toBeInTheDocument();
+
+      await act(async () => {
+        within(rowFor('/api/new')).getByRole('button', { name: 'Delete' }).click();
+      });
+      expect(panel().queryByRole('region', { name: 'Key details' })).not.toBeInTheDocument();
+    });
+
+    it('opens the root and keeps deeper nodes collapsed until clicked', () => {
+      renderCache([['/api/user', { data: { profile: { name: 'Ada' } } }]]);
+      select('/api/user');
+
+      const profile = tree('Data').getByRole('button', { name: /profile/ });
+      expect(tree('Data').getByRole('button', { name: 'Object(1)' })).toHaveAttribute(
+        'aria-expanded',
+        'true'
+      );
+      expect(profile).toHaveAttribute('aria-expanded', 'false');
+      expect(tree('Data').queryByText('"Ada"')).not.toBeInTheDocument();
+
+      fireEvent.click(profile);
+
+      expect(profile).toHaveAttribute('aria-expanded', 'true');
+      expect(tree('Data').getByText('"Ada"')).toBeInTheDocument();
+    });
+
+    it('splits a large array into ranges instead of rendering every item', () => {
+      const items = Array.from({ length: 25_000 }, (_, i) => i);
+      renderCache([['/api/items', { data: items }]]);
+      select('/api/items');
+
+      // 25,000 items: three ranges of 10,000, each of 100 ranges of 100.
+      const ranges = tree('Data').getAllByRole('button', { name: /^\[\d+ … \d+\]$/ });
+      expect(ranges.map((range) => range.textContent)).toEqual([
+        '[0 … 9999]',
+        '[10000 … 19999]',
+        '[20000 … 24999]'
+      ]);
+      expect(tree('Data').getAllByRole('listitem')).toHaveLength(4);
+
+      fireEvent.click(ranges[2]!);
+      fireEvent.click(tree('Data').getByRole('button', { name: '[24900 … 24999]' }));
+
+      expect(tree('Data').getByText('24999', { selector: '.json-value' })).toBeInTheDocument();
+    });
+
+    it('keeps a property expanded when a sibling before it goes away', async () => {
+      function Update() {
+        const { mutate } = useSWRConfig();
+        return (
+          <button onClick={() => mutate('/api/user', { b: { y: 3 } }, { revalidate: false })}>
+            update
+          </button>
+        );
+      }
+      render(
+        <Wrapper cache={new Map([['/api/user', { data: { a: { x: 1 }, b: { y: 2 } } }]])}>
+          <Update />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+      select('/api/user');
+      fireEvent.click(tree('Data').getByRole('button', { name: /^b/ }));
+      expect(tree('Data').getByText('2')).toBeInTheDocument();
+
+      await act(async () => {
+        screen.getByRole('button', { name: 'update' }).click();
+      });
+
+      expect(tree('Data').getByRole('button', { name: /^b/ })).toHaveAttribute(
+        'aria-expanded',
+        'true'
+      );
+      expect(tree('Data').getByText('3')).toBeInTheDocument();
+    });
+
+    it("says so in place of a tree it can't show, and keeps the panel working", () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const data = new Proxy(
+        {},
+        {
+          ownKeys() {
+            throw new Error('revoked');
+          }
+        }
+      );
+      renderCache([['/api/proxy', { data }]]);
+
+      select('/api/proxy');
+
+      expect(detail().getByText("Couldn't show this value: revoked")).toBeInTheDocument();
+      expect(rowFor('/api/proxy')).toBeInTheDocument();
+      vi.restoreAllMocks();
+    });
+
+    it("still says so when the failure's message isn't a string", () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const failure = Object.assign(new Error(), { message: { code: 42 } });
+      const data = new Proxy(
+        {},
+        {
+          ownKeys() {
+            throw failure;
+          }
+        }
+      );
+      renderCache([['/api/proxy', { data }]]);
+
+      select('/api/proxy');
+
+      expect(detail().getByText("Couldn't show this value: [object Object]")).toBeInTheDocument();
+      vi.restoreAllMocks();
+    });
+
+    it('shows circular references without looping', () => {
+      const data: Record<string, unknown> = { name: 'loop' };
+      data.self = data;
+      renderCache([['/api/loop', { data }]]);
+      select('/api/loop');
+
+      expect(tree('Data').getByText('[Circular]')).toBeInTheDocument();
     });
   });
 

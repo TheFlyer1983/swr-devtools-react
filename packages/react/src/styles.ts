@@ -216,8 +216,32 @@ export const styles = `
   flex: none;
 }
 
-.body {
+/* The panel's size, not the window's, decides whether the details sit beside
+   the list or below it. */
+.main {
   flex: 1;
+  min-height: 0;
+  container-type: inline-size;
+}
+
+.split {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+}
+
+.split[data-detail] {
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+@container (min-width: 640px) {
+  .split[data-detail] {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.body {
   min-height: 0;
   overflow: auto;
   padding: 0 var(--swr-dt-space-3) var(--swr-dt-space-3);
@@ -292,8 +316,22 @@ select:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding: 2px var(--swr-dt-space-1);
+  text-align: left;
   font-family: var(--swr-dt-font-mono);
   font-size: var(--swr-dt-font-size-sm);
+  background: transparent;
+  border-color: transparent;
+}
+
+.key:hover {
+  text-decoration: underline;
+  border-color: transparent;
+}
+
+.key-row[data-selected] {
+  background: var(--swr-dt-color-surface);
+  box-shadow: inset 2px 0 var(--swr-dt-color-accent);
 }
 
 /* A fixed width keeps the keys lined up, whatever the status. */
@@ -386,5 +424,179 @@ select:focus-visible {
   display: flex;
   flex: none;
   gap: var(--swr-dt-space-1);
+}
+
+.detail {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--swr-dt-space-2) var(--swr-dt-space-3) var(--swr-dt-space-3);
+  border-top: 1px solid var(--swr-dt-color-border);
+}
+
+@container (min-width: 640px) {
+  .detail {
+    border-top: none;
+    border-left: 1px solid var(--swr-dt-color-border);
+  }
+}
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--swr-dt-space-2);
+}
+
+.detail-header > button {
+  flex: none;
+  margin-left: auto;
+}
+
+/* The full key, however long: it wraps rather than truncating. */
+.detail-key,
+.detail-raw-key {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--swr-dt-font-mono);
+  font-size: var(--swr-dt-font-size-sm);
+}
+
+.detail-key {
+  padding-top: 2px;
+  font-weight: 600;
+}
+
+.detail-meta {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--swr-dt-space-1) var(--swr-dt-space-3);
+  margin: var(--swr-dt-space-3) 0 0;
+  font-size: var(--swr-dt-font-size-sm);
+}
+
+.detail-meta dt {
+  color: var(--swr-dt-color-muted);
+}
+
+.detail-meta dd {
+  margin: 0;
+}
+
+.detail-heading {
+  margin: var(--swr-dt-space-4) 0 var(--swr-dt-space-1);
+  font-size: var(--swr-dt-font-size-sm);
+  font-weight: 600;
+  color: var(--swr-dt-color-muted);
+}
+
+.json-tree,
+.json-children {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--swr-dt-font-mono);
+  font-size: var(--swr-dt-font-size-sm);
+}
+
+.json-children {
+  padding-left: var(--swr-dt-space-4);
+  border-left: 1px solid var(--swr-dt-color-border);
+  margin-left: 5px;
+}
+
+.json-row {
+  padding: 1px 0;
+}
+
+/* A leaf lines up with the name of a container next to it, after its arrow. */
+.json-row > .json-name,
+.json-row > .json-value:first-child {
+  margin-left: 14px;
+}
+
+.json-toggle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--swr-dt-space-1);
+  max-width: 100%;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: none;
+}
+
+.json-toggle::before {
+  content: '▸';
+  flex: none;
+  width: 10px;
+  color: var(--swr-dt-color-muted);
+}
+
+.json-toggle[aria-expanded='true']::before {
+  content: '▾';
+}
+
+.json-toggle:disabled {
+  cursor: default;
+}
+
+.json-toggle:disabled::before {
+  visibility: hidden;
+}
+
+.json-toggle:hover .json-name,
+.json-toggle:hover .json-range {
+  text-decoration: underline;
+}
+
+.json-name::after {
+  content: ':';
+  margin-right: var(--swr-dt-space-1);
+  color: var(--swr-dt-color-muted);
+}
+
+.json-toggle > .json-name::after {
+  margin-right: 0;
+}
+
+.json-value {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.json-value[data-kind='string'],
+.json-value[data-kind='date'] {
+  color: var(--swr-dt-color-success);
+}
+
+.json-value[data-kind='number'],
+.json-value[data-kind='bigint'],
+.json-value[data-kind='boolean'] {
+  color: var(--swr-dt-color-accent);
+}
+
+.json-value[data-kind='error'],
+.json-value[data-kind='thrown'] {
+  color: var(--swr-dt-color-error);
+}
+
+.json-value[data-kind='null'],
+.json-value[data-kind='undefined'],
+.json-value[data-kind='symbol'],
+.json-value[data-kind='function'],
+.json-value[data-kind='circular'],
+.json-value[data-kind='array'],
+.json-value[data-kind='object'],
+.json-value[data-kind='map'],
+.json-value[data-kind='set'],
+.json-range {
+  color: var(--swr-dt-color-muted);
+}
+
+.json-unreadable {
+  margin: 0;
+  font-size: var(--swr-dt-font-size-sm);
+  color: var(--swr-dt-color-error);
 }
 `;
