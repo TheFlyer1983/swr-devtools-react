@@ -2,6 +2,7 @@ import { createCacheActions, type CacheActions } from '@swr-devtools-react/core'
 import { act, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import useSWR, { SWRConfig, useSWRConfig, type Cache } from 'swr';
+import useSWRInfinite from 'swr/infinite';
 import { describe, expect, it } from 'vitest';
 
 // Confirms the core actions make real SWR hooks re-render (issue #9).
@@ -129,6 +130,47 @@ describe('cache actions with mounted hooks', () => {
 
       expect(cache.get('/api/user')).toBeUndefined();
       expect(screen.getByText('/api/user: v1')).toBeInTheDocument();
+    });
+  });
+
+  // Known limit (#15): useSWRInfinite caches each page under its own key, but
+  // only the $inf$ key has a mounted hook. Page keys look like any other key,
+  // so the panel can't disable Revalidate for them.
+  describe('with useSWRInfinite', () => {
+    function Pages({ fetcher }: { fetcher: (key: string) => Promise<string> }) {
+      const { data } = useSWRInfinite((index) => `/api/page/${index}`, fetcher, {
+        initialSize: 2
+      });
+      return <p>{`pages: ${data?.join(',') ?? 'none'}`}</p>;
+    }
+
+    function pageCounter() {
+      const fetched: string[] = [];
+      const fetcher = (key: string) => {
+        fetched.push(key);
+        return Promise.resolve(`${key}#${fetched.length}`);
+      };
+      return { fetcher, fetched };
+    }
+
+    it('revalidating the $inf$ key refetches through the hook', async () => {
+      const pages = pageCounter();
+      renderWith(<Pages key="p" fetcher={pages.fetcher} />);
+      expect(await screen.findByText('pages: /api/page/0#1,/api/page/1#2')).toBeInTheDocument();
+
+      await run((a) => a.revalidate('$inf$/api/page/0'));
+
+      expect(pages.fetched).toEqual(['/api/page/0', '/api/page/1', '/api/page/0']);
+    });
+
+    it('revalidating a page key fetches nothing', async () => {
+      const pages = pageCounter();
+      renderWith(<Pages key="p" fetcher={pages.fetcher} />);
+      expect(await screen.findByText('pages: /api/page/0#1,/api/page/1#2')).toBeInTheDocument();
+
+      await run((a) => a.revalidate('/api/page/1'));
+
+      expect(pages.fetched).toEqual(['/api/page/0', '/api/page/1']);
     });
   });
 });
