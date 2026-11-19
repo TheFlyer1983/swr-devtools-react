@@ -100,7 +100,13 @@ export function getChildren(
   if (typeof value !== 'object' || value === null || value instanceof Date) return [];
 
   if (Array.isArray(value)) {
-    return value.slice(start, end).map((item, i) => ({ name: String(start + i), value: item }));
+    // Index by index rather than slice(): a hole reads as undefined instead of
+    // being skipped, and an index getter that throws gives a `thrown` child.
+    const children: ValueChild[] = [];
+    for (let index = start; index < Math.min(end, value.length); index += 1) {
+      children.push({ name: String(index), value: readProperty(value, String(index)) });
+    }
+    return children;
   }
   if (value instanceof Map) {
     return takeRange(value, start, end).map(([key, item]: [unknown, unknown]) => ({

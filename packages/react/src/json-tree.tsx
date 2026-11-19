@@ -54,7 +54,8 @@ class TreeBoundary extends Component<TreeBoundaryProps, TreeBoundaryState> {
   static getDerivedStateFromError(error: unknown): Partial<TreeBoundaryState> {
     let failure = 'unknown error';
     try {
-      failure = error instanceof Error ? error.message : String(error);
+      // String() too: a message can be any value, and React can't render an object.
+      failure = String(error instanceof Error ? error.message : error);
     } catch {
       // Keep the placeholder.
     }

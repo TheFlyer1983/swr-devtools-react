@@ -157,6 +157,31 @@ describe('getChildren', () => {
     expect(inspectValue(error).preview).toBe('[unreadable error]');
   });
 
+  it('shows an array item whose getter throws as a value, keeping the others', () => {
+    const items: unknown[] = [];
+    Object.defineProperty(items, 0, {
+      enumerable: true,
+      get: () => {
+        throw new TypeError('nope');
+      }
+    });
+    items[1] = 'ok';
+
+    const [broken, ok] = getChildren(items);
+
+    expect(inspectValue(broken?.value).kind).toBe('thrown');
+    expect(ok).toEqual({ name: '1', value: 'ok' });
+  });
+
+  it('lists a hole in a sparse array as undefined', () => {
+    // oxlint-disable-next-line no-sparse-arrays
+    expect(getChildren([1, , 3])).toEqual([
+      { name: '0', value: 1 },
+      { name: '1', value: undefined },
+      { name: '2', value: 3 }
+    ]);
+  });
+
   it('stops iterating a map or set at the end of the slice', () => {
     const seen: number[] = [];
     const set = new Set<number>();

@@ -547,6 +547,25 @@ describe('<SWRDevtoolsPanel />', () => {
       vi.restoreAllMocks();
     });
 
+    it("still says so when the failure's message isn't a string", () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const failure = Object.assign(new Error(), { message: { code: 42 } });
+      const data = new Proxy(
+        {},
+        {
+          ownKeys() {
+            throw failure;
+          }
+        }
+      );
+      renderCache([['/api/proxy', { data }]]);
+
+      select('/api/proxy');
+
+      expect(detail().getByText("Couldn't show this value: [object Object]")).toBeInTheDocument();
+      vi.restoreAllMocks();
+    });
+
     it('shows circular references without looping', () => {
       const data: Record<string, unknown> = { name: 'loop' };
       data.self = data;
