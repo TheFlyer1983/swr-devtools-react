@@ -11,3 +11,5 @@ export { getKeyKind } from './key-kind.ts';
 export type { KeyKind } from './key-kind.ts';
 export { getStatus } from './status.ts';
 export type { KeyStatus } from './status.ts';
+export { filterEntries, sortEntries } from './sort-entries.ts';
+export type { SortBy } from './sort-entries.ts';

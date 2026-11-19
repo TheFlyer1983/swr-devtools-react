@@ -20,13 +20,9 @@ export interface KeyListProps {
   actions: CacheActions;
 }
 
-/** Every key in the cache, with its status and how long ago it was updated. */
+/** The given keys, each with its status and how long ago it was updated. */
 export function KeyList({ entries, actions }: KeyListProps): ReactElement {
   const now = useNow(1000);
-
-  if (entries.length === 0) {
-    return <p className="empty">No keys in the cache yet.</p>;
-  }
 
   return (
     <ul className="key-list" aria-label="Cache keys">
