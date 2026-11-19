@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import useSWR, { SWRConfig, useSWRConfig, type Cache } from 'swr';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -48,6 +48,13 @@ function rowFor(label: string): HTMLElement {
   const row = panel().getByText(label).closest('li');
   if (!row) throw new Error(`No row for ${label}`);
   return row;
+}
+
+/** The keys as listed, top to bottom. */
+function listedKeys(): (string | null)[] {
+  return panel()
+    .getAllByRole('listitem')
+    .map((row) => row.querySelector('.key')?.textContent ?? null);
 }
 
 function ageOf(label: string): HTMLElement {
@@ -249,6 +256,112 @@ describe('<SWRDevtoolsPanel />', () => {
 
       expect([...cache.keys()]).toEqual(['/api/user', '/api/posts']);
       expect(panel().getByText(/2 keys/)).toBeInTheDocument();
+    });
+  });
+
+  describe('search and sort', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    function renderKeys(keys: string[]) {
+      const cache: Cache = new Map(keys.map((key) => [key, { data: key }]));
+      render(
+        <Wrapper cache={cache}>
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+    }
+
+    const filter = (text: string) =>
+      fireEvent.change(panel().getByRole('searchbox', { name: 'Filter keys' }), {
+        target: { value: text }
+      });
+
+    const sortBy = (name: string) => {
+      const select = panel().getByRole('combobox', { name: 'Sort by' });
+      const option = within(select).getByRole<HTMLOptionElement>('option', { name });
+      fireEvent.change(select, { target: { value: option.value } });
+    };
+
+    it('sorts by key by default', () => {
+      renderKeys(['/api/user', '/api/posts', '/api/comments']);
+
+      expect(listedKeys()).toEqual(['/api/comments', '/api/posts', '/api/user']);
+      expect(panel().getByRole('combobox', { name: 'Sort by' })).toHaveDisplayValue('Key');
+    });
+
+    it('filters keys by text, and counts what it shows', () => {
+      renderKeys(['/api/user', '/api/posts', '/api/posts/1']);
+
+      filter('POSTS');
+
+      expect(listedKeys()).toEqual(['/api/posts', '/api/posts/1']);
+      expect(panel().getByText(/2 of 3 keys/)).toBeInTheDocument();
+    });
+
+    it('says so when no key matches', () => {
+      renderKeys(['/api/user']);
+
+      filter('nope');
+
+      expect(panel().getByText('No keys match “nope”.')).toBeInTheDocument();
+      expect(panel().queryByRole('list')).not.toBeInTheDocument();
+    });
+
+    it('shows every key again when the filter is cleared', () => {
+      renderKeys(['/api/user', '/api/posts']);
+
+      filter('user');
+      filter('');
+
+      expect(listedKeys()).toHaveLength(2);
+      expect(panel().getByText(/^2 keys/)).toBeInTheDocument();
+    });
+
+    it('sorts by status, errors first', () => {
+      const cache: Cache = new Map<string, object>([
+        ['/a-success', { data: 1 }],
+        ['/b-error', { error: new Error('boom') }],
+        ['/c-loading', { isLoading: true, isValidating: true }]
+      ]);
+      render(
+        <Wrapper cache={cache}>
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+
+      sortBy('Status');
+
+      expect(listedKeys()).toEqual(['/b-error', '/c-loading', '/a-success']);
+    });
+
+    it('sorts by last updated, newest first', async () => {
+      const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+      const cache: Cache = new Map([
+        ['/api/a', { data: 'a' }],
+        ['/api/b', { data: 'b' }]
+      ]);
+      function UpdateB() {
+        const { mutate } = useSWRConfig();
+        return (
+          <button onClick={() => mutate('/api/b', 'b2', { revalidate: false })}>update</button>
+        );
+      }
+      render(
+        <Wrapper cache={cache}>
+          <UpdateB />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+
+      now.mockReturnValue(1_060_000);
+      await act(async () => {
+        screen.getByRole('button', { name: 'update' }).click();
+      });
+      sortBy('Last updated');
+
+      expect(listedKeys()).toEqual(['/api/b', '/api/a']);
     });
   });
 

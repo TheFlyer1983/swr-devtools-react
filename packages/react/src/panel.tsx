@@ -1,11 +1,14 @@
 import {
   createCacheActions,
   createCacheStore,
+  filterEntries,
+  sortEntries,
   type CacheActions,
   type CacheEntry,
-  type CacheObserverMode
+  type CacheObserverMode,
+  type SortBy
 } from '@swr-devtools-react/core';
-import { useMemo, useSyncExternalStore, type ReactElement } from 'react';
+import { useId, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { useSWRConfig } from 'swr';
 import { KeyList } from './key-list.tsx';
 
@@ -43,16 +46,31 @@ export interface PanelProps {
   onClose?: () => void;
 }
 
-/** The panel's content: a header, and the key list. */
+const SORT_OPTIONS: { value: SortBy; name: string }[] = [
+  { value: 'key', name: 'Key' },
+  { value: 'status', name: 'Status' },
+  { value: 'updated', name: 'Last updated' }
+];
+
+/** The panel's content: a header, a filter and sort bar, and the key list. */
 export function Panel({ view, onClose }: PanelProps): ReactElement {
   const { entries, mode, actions } = view;
+  // Sorting by key by default keeps rows still while keys revalidate.
+  const [sortBy, setSortBy] = useState<SortBy>('key');
+  const [query, setQuery] = useState('');
+  const visible = useMemo(
+    () => sortEntries(filterEntries(entries, query), sortBy),
+    [entries, query, sortBy]
+  );
+  const isFiltered = query.trim() !== '';
+  const sortId = useId();
 
   return (
     <div className="panel-content">
       <header className="header">
         <span className="title">SWR Devtools</span>
         <span className="mode">
-          {entries.length} keys ({mode})
+          {isFiltered ? `${visible.length} of ${entries.length}` : entries.length} keys ({mode})
         </span>
         <span className="header-actions">
           <button
@@ -72,8 +90,42 @@ export function Panel({ view, onClose }: PanelProps): ReactElement {
           )}
         </span>
       </header>
+      <div className="toolbar">
+        <input
+          type="search"
+          className="search"
+          placeholder="Filter keys"
+          aria-label="Filter keys"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <label className="sort-label" htmlFor={sortId}>
+          Sort by
+        </label>
+        <select
+          id={sortId}
+          className="sort"
+          value={sortBy}
+          onChange={(event) => {
+            const option = SORT_OPTIONS.find(({ value }) => value === event.target.value);
+            if (option) setSortBy(option.value);
+          }}
+        >
+          {SORT_OPTIONS.map(({ value, name }) => (
+            <option key={value} value={value}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="body">
-        <KeyList entries={entries} actions={actions} />
+        {entries.length === 0 ? (
+          <p className="empty">No keys in the cache yet.</p>
+        ) : visible.length === 0 ? (
+          <p className="empty">No keys match “{query.trim()}”.</p>
+        ) : (
+          <KeyList entries={visible} actions={actions} />
+        )}
       </div>
     </div>
   );
