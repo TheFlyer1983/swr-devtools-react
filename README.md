@@ -12,22 +12,26 @@ In-app devtools for [SWR](https://swr.vercel.app): see every cache key, then rev
 
 ### Forcing it on (e.g. staging)
 
-Staging builds usually have `NODE_ENV=production` too. To keep the devtools there, import from `swr-devtools-react/production`, which skips the check. Load it lazily behind your own flag so it stays out of the real production bundle:
+Staging builds usually have `NODE_ENV=production` too. To keep the devtools there, import from `swr-devtools-react/production`, which skips the check. Gate the import behind your own build-time flag, so it stays out of the real production bundle:
 
 ```tsx
 import { lazy, Suspense } from 'react';
 import { SWRDevtools } from 'swr-devtools-react';
 
-const SWRDevtoolsProduction = lazy(() =>
-  import('swr-devtools-react/production').then((module) => ({ default: module.SWRDevtools }))
-);
-
-// Your own flag, e.g. a build-time env var (`import.meta.env` in Vite) or a
-// query param read at runtime.
-const forceDevtools = import.meta.env.VITE_ENABLE_SWR_DEVTOOLS === 'true';
+// The flag must be replaced at build time (here, Vite's `import.meta.env`), and
+// the `import()` must sit inside the check. Then a build with the flag off
+// drops the devtools.
+const SWRDevtoolsProduction =
+  import.meta.env.VITE_ENABLE_SWR_DEVTOOLS === 'true'
+    ? lazy(() =>
+        import('swr-devtools-react/production').then((module) => ({
+          default: module.SWRDevtools
+        }))
+      )
+    : null;
 
 export function Devtools() {
-  if (!forceDevtools) return <SWRDevtools />;
+  if (!SWRDevtoolsProduction) return <SWRDevtools />;
   return (
     <Suspense fallback={null}>
       <SWRDevtoolsProduction />
@@ -36,7 +40,14 @@ export function Devtools() {
 }
 ```
 
-Render `<Devtools />` inside your `<SWRConfig>`, where `<SWRDevtools />` would go. A static `import ... from 'swr-devtools-react/production'` works too, but then the devtools ship in every build that includes it.
+Render `<Devtools />` inside your `<SWRConfig>`, where `<SWRDevtools />` would go.
+
+Two things keep the devtools in the bundle:
+
+- **A runtime flag**, such as a query param. It only controls whether the devtools load. The bundler can't know its value, so the devtools stay in the build.
+- **A `lazy()` call outside the check.** Bundlers keep it even when the flag is off. In a Vite build this put the whole panel in the main bundle.
+
+A static `import ... from 'swr-devtools-react/production'` also ships the devtools in every build that includes it.
 
 ## Development
 
