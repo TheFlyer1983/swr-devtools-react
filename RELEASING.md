@@ -51,7 +51,12 @@ Changesets only versions and writes the changelog here. It never publishes.
 
 4. Approve the `npm` environment deployment when the workflow asks, if the environment requires a reviewer.
 
-The workflow stops before publishing if the tag points at a commit that isn't on `main`, or if the tag and `packages/react/package.json` disagree. Delete the tag (`git push origin :refs/tags/v0.1.0`), fix the cause and tag again.
+The workflow stops before publishing if the tag points at a commit that isn't on `main`, if the tag and `packages/react/package.json` disagree, or if `packages/react/CHANGELOG.md` has no section for the version. Delete the tag locally and on GitHub, fix the cause, then tag again:
+
+```bash
+git tag -d v0.1.0
+git push origin :refs/tags/v0.1.0
+```
 
 ## Prereleases
 
@@ -68,6 +73,8 @@ pnpm changeset pre exit  # when the stable release is ready
 
 Done once per repository. Listed here so it can be checked or redone.
 
+**npm package.** Trusted publishing is set up from the package's settings page, so the package has to exist on npm first. `swr-devtools-react` already does: a `0.0.0` placeholder reserves the name. For a new package name, create it first, for example with `npm stage publish`, which publishes a `0.0.0-stage` placeholder when the package doesn't exist yet. See npm's [staged publishing](https://docs.npmjs.com/staged-publishing) docs.
+
 **npm trusted publisher.** On npmjs.com, open the package's Settings, then Trusted Publisher, and add GitHub Actions with:
 
 | Field             | Value                |
@@ -76,6 +83,11 @@ Done once per repository. Listed here so it can be checked or redone.
 | Repository        | `swr-devtools-react` |
 | Workflow filename | `release.yml`        |
 | Environment       | `npm`                |
+| Allowed actions   | allow `npm publish`  |
+
+New trusted publishers only allow `npm stage publish` unless you also allow `npm publish`. The workflow runs `npm publish`, so without it the publish job is rejected. Settings can't be edited after saving: delete the entry and add it again to change them.
+
+A new trusted publisher expires if nothing is published through it within 2 days. Add it when the release PR is ready to tag, not before.
 
 Then, under Publishing access, choose "Require two-factor authentication and disallow tokens". Trusted publishing keeps working, and a leaked token can't publish.
 
@@ -85,4 +97,10 @@ Then, under Publishing access, choose "Require two-factor authentication and dis
 
 - **verify or check failed.** Nothing was published. Delete the tag, fix the cause on `main`, tag again.
 - **publish failed.** Check the error. A trusted publishing error usually means the npm settings above don't match the workflow file name or environment. Re-run the failed job once fixed.
-- **release failed after publishing.** The package is on npm. Re-run only the `release` job. Don't re-run `publish`: npm rejects a version that already exists.
+- **release failed after publishing.** The package is on npm. Re-run only the `release` job. Don't re-run `publish`: npm rejects a version that already exists. If re-running can't fix it, write the release by hand with the version's changelog section as notes:
+
+  ```bash
+  gh release create v0.1.0 --verify-tag --title v0.1.0 --notes-file notes.md
+  ```
+
+  Use `gh release edit v0.1.0 --notes-file notes.md` if the release already exists.

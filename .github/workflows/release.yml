@@ -57,6 +57,16 @@ jobs:
             echo "prerelease=$prerelease"
           } >> "$GITHUB_OUTPUT"
           echo "Releasing $package_version to the npm \`$dist_tag\` dist-tag." >> "$GITHUB_STEP_SUMMARY"
+      - name: Check CHANGELOG.md has an entry for the version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        # Checked here rather than only in the release job, so a missing entry
+        # stops the run before anything is published.
+        run: |
+          if ! grep -qxF "## $VERSION" packages/react/CHANGELOG.md 2>/dev/null; then
+            echo "::error::packages/react/CHANGELOG.md has no '## $VERSION' section. Run pnpm changeset version in the release PR."
+            exit 1
+          fi
 
   check:
     name: Full check
