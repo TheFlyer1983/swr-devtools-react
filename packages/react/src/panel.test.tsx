@@ -546,6 +546,129 @@ describe('<SWRDevtoolsPanel />', () => {
       }
     });
 
+    describe('editing data', () => {
+      const editor = () => detail().getByRole('textbox', { name: 'Data as JSON' });
+      const edit = () => fireEvent.click(detail().getByRole('button', { name: 'Edit' }));
+      const type = (text: string) => fireEvent.change(editor(), { target: { value: text } });
+
+      it('opens prefilled with the formatted JSON, and focused', () => {
+        renderCache([['/api/user', { data: { name: 'Ada' } }]]);
+        select('/api/user');
+
+        edit();
+
+        expect(editor()).toHaveValue('{\n  "name": "Ada"\n}');
+        expect(hasFocus(editor())).toBe(true);
+        expect(detail().queryByRole('list', { name: 'Data' })).not.toBeInTheDocument();
+      });
+
+      it('applies the edit, and the app updates without refetching', async () => {
+        let calls = 0;
+        const fetcher = () => Promise.resolve(`v${++calls}`);
+        render(
+          <Wrapper cache={new Map()}>
+            <User fetcher={fetcher} />
+            <SWRDevtoolsPanel />
+          </Wrapper>
+        );
+        expect(await screen.findByText('user: v1')).toBeInTheDocument();
+        select('/api/user');
+        edit();
+        type('"edited"');
+
+        await act(async () => {
+          fireEvent.click(detail().getByRole('button', { name: 'Apply' }));
+        });
+
+        expect(await screen.findByText('user: edited')).toBeInTheDocument();
+        expect(calls).toBe(1);
+        expect(tree('Data').getByText('"edited"')).toBeInTheDocument();
+        expect(hasFocus(detail().getByRole('button', { name: 'Edit' }))).toBe(true);
+      });
+
+      it("shows an error for invalid JSON, and doesn't apply it", async () => {
+        const cache = renderCache([['/api/user', { data: 'Ada' }]]);
+        select('/api/user');
+        edit();
+        type('{ name: ');
+
+        await act(async () => {
+          fireEvent.click(detail().getByRole('button', { name: 'Apply' }));
+        });
+
+        expect(detail().getByRole('alert')).toHaveTextContent(/^Invalid JSON: /);
+        expect(editor()).toHaveAttribute('aria-invalid', 'true');
+        expect(editor()).toHaveAccessibleDescription(/^Invalid JSON: /);
+        expect(cache.get('/api/user')?.data).toBe('Ada');
+
+        type('{ "name": "Ada" }');
+        expect(detail().queryByRole('alert')).not.toBeInTheDocument();
+      });
+
+      it('applies with Ctrl+Enter', async () => {
+        const cache = renderCache([['/api/user', { data: 'Ada' }]]);
+        select('/api/user');
+        edit();
+        type('[1, 2]');
+
+        await act(async () => {
+          fireEvent.keyDown(editor(), { key: 'Enter', ctrlKey: true });
+        });
+
+        expect(cache.get('/api/user')?.data).toEqual([1, 2]);
+      });
+
+      it('cancels with the Cancel button or Escape, keeping the data', () => {
+        const cache = renderCache([['/api/user', { data: 'Ada' }]]);
+        select('/api/user');
+
+        edit();
+        type('"changed"');
+        fireEvent.click(detail().getByRole('button', { name: 'Cancel' }));
+        expect(detail().queryByRole('textbox')).not.toBeInTheDocument();
+        expect(hasFocus(detail().getByRole('button', { name: 'Edit' }))).toBe(true);
+
+        edit();
+        fireEvent.keyDown(editor(), { key: 'Escape' });
+        expect(detail().queryByRole('textbox')).not.toBeInTheDocument();
+        expect(cache.get('/api/user')?.data).toBe('Ada');
+      });
+
+      it("keeps the user's text when the data changes while editing", async () => {
+        renderCache([['/api/new', { data: 'old' }]]);
+        select('/api/new');
+        edit();
+        type('"mine"');
+
+        await act(async () => {
+          screen.getByRole('button', { name: 'add' }).click();
+        });
+
+        expect(editor()).toHaveValue('"mine"');
+      });
+
+      it('warns when JSON would change the data', () => {
+        renderCache([['/api/user', { data: { joined: new Date(0) } }]]);
+        select('/api/user');
+        edit();
+
+        expect(editor()).toHaveAccessibleDescription(/dates or Maps/);
+      });
+
+      it("disables Edit for data JSON can't write, and says why", () => {
+        const data: Record<string, unknown> = {};
+        data.self = data;
+        renderCache([['/api/loop', { data }]]);
+        select('/api/loop');
+
+        const button = detail().getByRole('button', { name: 'Edit' });
+        expect(button).toHaveAttribute('aria-disabled', 'true');
+        expect(button).toHaveAccessibleDescription(/can’t be edited/);
+        fireEvent.click(button);
+        expect(detail().queryByRole('textbox')).not.toBeInTheDocument();
+      });
+    });
+
     it('opens the root and keeps deeper nodes collapsed until clicked', () => {
       renderCache([['/api/user', { data: { profile: { name: 'Ada' } } }]]);
       select('/api/user');

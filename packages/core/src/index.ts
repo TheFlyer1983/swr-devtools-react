@@ -15,3 +15,5 @@ export { filterEntries, sortEntries } from './sort-entries.ts';
 export type { SortBy } from './sort-entries.ts';
 export { getChildren, inspectValue } from './inspect-value.ts';
 export type { InspectedValue, ValueChild, ValueKind } from './inspect-value.ts';
+export { parseEditedData, toEditableData } from './edit-data.ts';
+export type { EditableData, ParsedData } from './edit-data.ts';

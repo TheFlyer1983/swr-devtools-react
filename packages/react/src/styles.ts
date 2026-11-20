@@ -259,7 +259,8 @@ export const styles = `
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
   font-size: var(--swr-dt-font-size-sm);
   color: var(--swr-dt-color-text);
@@ -297,7 +298,8 @@ button.danger:hover {
   border-color: var(--swr-dt-color-error);
 }
 
-input {
+input,
+textarea {
   background: var(--swr-dt-color-bg);
 }
 
@@ -307,7 +309,8 @@ input::placeholder {
 
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--swr-dt-color-accent);
   outline-offset: 1px;
 }
@@ -514,6 +517,35 @@ select:focus-visible {
   margin: var(--swr-dt-space-4) 0 var(--swr-dt-space-1);
   font-size: var(--swr-dt-font-size-sm);
   font-weight: 600;
+  color: var(--swr-dt-color-muted);
+}
+
+.editor-text {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  font-family: var(--swr-dt-font-mono);
+  line-height: var(--swr-dt-line-height);
+  tab-size: 2;
+}
+
+.editor-text[aria-invalid='true'] {
+  border-color: var(--swr-dt-color-error);
+}
+
+.editor-error,
+.editor-note {
+  margin: var(--swr-dt-space-1) 0 0;
+  font-size: var(--swr-dt-font-size-sm);
+}
+
+.editor-error {
+  color: var(--swr-dt-color-error);
+}
+
+.editor-note {
+  margin: 0 0 var(--swr-dt-space-1);
   color: var(--swr-dt-color-muted);
 }
 
