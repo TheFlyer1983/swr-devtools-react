@@ -66,6 +66,8 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      - name: Check the packed package with publint and attw
+        run: pnpm check:package
       - name: Build playgrounds for production
         run: pnpm --filter "./playgrounds/*" --if-present run build
       - name: Check production bundles have no devtools code

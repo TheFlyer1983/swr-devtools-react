@@ -13,9 +13,14 @@
     "dev": "pnpm --filter @swr-devtools-react/playground-vite dev",
     "dev:next": "pnpm --filter @swr-devtools-react/playground-next dev",
     "check:prod": "pnpm build && pnpm --filter \"./playgrounds/*\" --if-present run build && node scripts/check-production-bundles.ts",
-    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build"
+    "pack:react": "cp README.md packages/react/README.md && pnpm --filter swr-devtools-react exec pnpm pack --out ../../.pack/swr-devtools-react.tgz",
+    "check:package": "pnpm pack:react && publint run --strict .pack/swr-devtools-react.tgz && attw .pack/swr-devtools-react.tgz --profile esm-only",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build",
+    "changeset": "changeset"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@changesets/cli": "^3.0.3",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -26,6 +31,7 @@
     "oxfmt": "^0.77.0",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
+    "publint": "^0.3.25",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "swr": "^2.5.1",

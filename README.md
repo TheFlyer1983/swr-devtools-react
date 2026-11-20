@@ -5,7 +5,7 @@
 
 In-app devtools for [SWR](https://swr.vercel.app): see every cache key, then revalidate, edit or delete it from a floating panel. Inspired by TanStack Query Devtools.
 
-![The devtools panel docked at the bottom of the Vite playground, with a key selected and its data shown as a JSON tree](docs/images/panel.png)
+![The devtools panel docked at the bottom of the Vite playground, with a key selected and its data shown as a JSON tree](https://raw.githubusercontent.com/TheFlyer1983/swr-devtools-react/main/docs/images/panel.png)
 
 ## Features
 
@@ -199,12 +199,12 @@ A static `import ... from 'swr-devtools-react/production'` also ships the devtoo
 
 ## Roadmap
 
-Next up are a TanStack Devtools plugin, observer counts per key, and a light theme that follows the system setting. The [spec](docs/SPEC.md) lists what's planned, and the [project board](https://github.com/users/TheFlyer1983/projects/7) shows what's in progress.
+Next up are a TanStack Devtools plugin, observer counts per key, and a light theme that follows the system setting. The [spec](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/docs/SPEC.md) lists what's planned, and the [project board](https://github.com/users/TheFlyer1983/projects/7) shows what's in progress.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, the playgrounds and how PRs work.
+See [CONTRIBUTING.md](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/CONTRIBUTING.md) for local setup, the playgrounds and how PRs work.
 
 ## Licence
 
-[MIT](LICENSE)
+[MIT](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/LICENSE)

@@ -47,6 +47,8 @@ docs/           The spec and spike write-ups.
 | `pnpm build`                   | Builds the published packages with tsdown                            |
 | `pnpm check`                   | Lint, format check, typecheck, test and build                        |
 | `pnpm check:prod`              | Fails if production playground builds contain the devtools' labels   |
+| `pnpm check:package`           | Packs the built package and checks it with publint and attw          |
+| `pnpm changeset`               | Records a change for the next release's changelog                    |
 
 ## Running the playgrounds
 
@@ -80,8 +82,9 @@ It has two pages. `/` uses the App Router and renders `<SWRDevtools />` from a s
 1. **Find or open an issue.** Every PR closes one. If you're unsure whether something fits, ask in the issue before writing code.
 2. **Branch from `main`.** Name it after the issue: `feat/16-edit-data`, `fix/52-resize-jump`, `docs/18-readme`.
 3. **Write tests.** Vitest tests sit next to the code they test, as `*.test.ts` or `*.test.tsx`. Add or update tests for what you change.
-4. **Run `pnpm check`** before pushing.
-5. **Open a PR** against `main`. Put `Closes #N` in the description, and say what changed and how you checked it. For UI changes, include a screenshot.
+4. **Add a changeset** if the change affects the published package: run `pnpm changeset` and commit the file it creates. [RELEASING.md](RELEASING.md) explains how releases work.
+5. **Run `pnpm check`** before pushing.
+6. **Open a PR** against `main`. Put `Closes #N` in the description, and say what changed and how you checked it. For UI changes, include a screenshot.
 
 ### PR titles
 
