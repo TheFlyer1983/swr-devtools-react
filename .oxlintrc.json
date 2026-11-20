@@ -27,6 +27,12 @@
       "rules": {
         "import/no-unassigned-import": "off"
       }
+    },
+    {
+      "files": ["**/*.test.{ts,tsx}"],
+      "rules": {
+        "unicorn/consistent-function-scoping": "off"
+      }
     }
   ]
 }
