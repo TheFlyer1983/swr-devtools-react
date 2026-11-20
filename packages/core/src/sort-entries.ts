@@ -31,7 +31,7 @@ const comparators: Record<SortBy, (a: CacheEntry, b: CacheEntry) => number> = {
  * back to the key, so the order is stable as the cache changes.
  */
 export function sortEntries(entries: readonly CacheEntry[], by: SortBy): CacheEntry[] {
-  return [...entries].sort(comparators[by]);
+  return entries.toSorted(comparators[by]);
 }
 
 /**
