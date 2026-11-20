@@ -9,5 +9,3 @@ coverage/
 .next/
 next-env.d.ts
 .pack/
-# Copied from the root README when packing.
-packages/react/README.md
