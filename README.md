@@ -95,6 +95,8 @@ Render `<SWRDevtools />` in your root layout, inside the client component that h
 import type { ReactNode } from 'react';
 import { SWRConfig } from 'swr';
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export function Providers({ children }: { children: ReactNode }) {
   return <SWRConfig value={{ fetcher }}>{children}</SWRConfig>;
 }
@@ -131,6 +133,8 @@ Put it in `pages/_app.tsx`, so every page gets it:
 import type { AppProps } from 'next/app';
 import { SWRConfig } from 'swr';
 import { SWRDevtools } from 'swr-devtools-react';
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function MyApp({ Component, pageProps }: AppProps) {
   return (
