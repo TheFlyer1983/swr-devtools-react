@@ -67,7 +67,7 @@ pnpm check   # lint, format check, typecheck, test, build
 | `pnpm typecheck`               | `tsc --noEmit` in every package                                      |
 | `pnpm test` / `test:watch`     | Vitest                                                               |
 | `pnpm build`                   | Builds the published packages with tsdown                            |
-| `pnpm check:prod`              | Builds everything for production and checks no devtools code ships   |
+| `pnpm check:prod`              | Fails if production playground builds contain the devtools' labels   |
 
 ## Licence
 
