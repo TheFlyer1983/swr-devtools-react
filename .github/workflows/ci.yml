@@ -66,3 +66,7 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      - name: Build playgrounds for production
+        run: pnpm --filter "./playgrounds/*" --if-present run build
+      - name: Check production bundles have no devtools code
+        run: node scripts/check-production-bundles.ts
