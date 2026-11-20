@@ -34,6 +34,18 @@ describe('toEditableData', () => {
     expect(toEditableData(data)).toMatchObject({ editable: true, exact: true });
   });
 
+  it('treats data it fails to inspect as inexact, but keeps it editable', () => {
+    const data = new Proxy(
+      { a: 1 },
+      {
+        getPrototypeOf() {
+          throw new Error('trap');
+        }
+      }
+    );
+    expect(toEditableData(data)).toEqual({ editable: true, text: '{\n  "a": 1\n}', exact: false });
+  });
+
   it("refuses data JSON can't write", () => {
     const circular: Record<string, unknown> = {};
     circular.self = circular;

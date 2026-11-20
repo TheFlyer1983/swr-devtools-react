@@ -631,7 +631,42 @@ describe('<SWRDevtoolsPanel />', () => {
         edit();
         fireEvent.keyDown(editor(), { key: 'Escape' });
         expect(detail().queryByRole('textbox')).not.toBeInTheDocument();
+
+        edit();
+        fireEvent.keyDown(detail().getByRole('button', { name: 'Cancel' }), { key: 'Escape' });
+        expect(detail().queryByRole('textbox')).not.toBeInTheDocument();
         expect(cache.get('/api/user')?.data).toBe('Ada');
+      });
+
+      it('opens with the current data when the app changed it in place', async () => {
+        const data = { name: 'Ada' };
+        function Rename() {
+          const { mutate } = useSWRConfig();
+          return (
+            <button
+              onClick={() => {
+                data.name = 'Grace';
+                void mutate('/api/user', data, { revalidate: false });
+              }}
+            >
+              rename
+            </button>
+          );
+        }
+        render(
+          <Wrapper cache={new Map([['/api/user', { data }]])}>
+            <Rename />
+            <SWRDevtoolsPanel />
+          </Wrapper>
+        );
+        select('/api/user');
+
+        await act(async () => {
+          screen.getByRole('button', { name: 'rename' }).click();
+        });
+        edit();
+
+        expect(editor()).toHaveValue('{\n  "name": "Grace"\n}');
       });
 
       it("keeps the user's text when the data changes while editing", async () => {

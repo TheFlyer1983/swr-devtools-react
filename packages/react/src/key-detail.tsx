@@ -33,6 +33,8 @@ const REVALIDATE_UNAVAILABLE: Partial<Record<CacheEntry['kind'], string>> = {
 
 /** One key in full: its key, status, error (if any) and data, with actions. */
 export function KeyDetail({ entry, actions, onClose }: KeyDetailProps): ReactElement {
+  // Only for Edit's disabled reason. Edit reads the data again when clicked,
+  // since an app can change its data in place and keep the same object.
   const editable = useMemo(() => toEditableData(entry.data), [entry.data]);
   // The text the editor started from, or null when not editing. Taken once,
   // so a live update doesn't overwrite what the user is typing.
@@ -92,10 +94,11 @@ export function KeyDetail({ entry, actions, onClose }: KeyDetailProps): ReactEle
         </button>
         {editing === null && (
           <ActionButton
-            ref={editRef}
+            buttonRef={editRef}
             reason={editable.editable ? undefined : editable.reason}
             onClick={() => {
-              if (editable.editable) setEditing({ text: editable.text, exact: editable.exact });
+              const current = toEditableData(entry.data);
+              if (current.editable) setEditing({ text: current.text, exact: current.exact });
             }}
           >
             Edit
@@ -132,19 +135,20 @@ export function KeyDetail({ entry, actions, onClose }: KeyDetailProps): ReactEle
  * tooltip: disabled buttons don't get hover or focus in every browser.
  */
 function ActionButton({
-  ref,
+  buttonRef,
   reason,
   onClick,
   children
 }: {
-  ref?: Ref<HTMLButtonElement>;
+  /** Not `ref`, which React 18 doesn't pass to function components. */
+  buttonRef?: Ref<HTMLButtonElement>;
   reason: string | undefined;
   onClick: () => void;
   children: ReactNode;
 }): ReactElement {
   return (
     <button
-      ref={ref}
+      ref={buttonRef}
       type="button"
       aria-disabled={reason !== undefined || undefined}
       title={reason}
@@ -188,7 +192,18 @@ function DataEditor({
   const describedBy = [error !== null && errorId, !exact && noteId].filter(Boolean).join(' ');
 
   return (
-    <div className="editor">
+    <div
+      className="editor"
+      role="group"
+      aria-label="Edit data"
+      // On the group, so Escape also cancels from Apply or Cancel.
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          onCancel();
+        }
+      }}
+    >
       {!exact && (
         <p id={noteId} className="editor-note">
           Some values, such as dates or Maps, can’t be written as JSON exactly. Applying saves them
@@ -209,10 +224,7 @@ function DataEditor({
           setError(null);
         }}
         onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            event.preventDefault();
-            onCancel();
-          } else if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
             event.preventDefault();
             apply();
           }

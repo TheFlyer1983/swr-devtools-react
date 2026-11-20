@@ -35,7 +35,14 @@ export function toEditableData(data: unknown): EditableData {
     // A function or symbol at the top level.
     return NOT_JSON;
   }
-  return { editable: true, text, exact: isExactJson(data) };
+  let exact: boolean;
+  try {
+    exact = isExactJson(data);
+  } catch {
+    // A Proxy trap threw. The text is still usable; flag it as inexact.
+    exact = false;
+  }
+  return { editable: true, text, exact };
 }
 
 /** Reads the edited text. Invalid JSON gives a message to show the user. */
