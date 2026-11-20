@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "dev": "pnpm --filter @swr-devtools-react/playground-vite dev",
     "dev:next": "pnpm --filter @swr-devtools-react/playground-next dev",
+    "check:prod": "pnpm build && pnpm --filter \"./playgrounds/*\" --if-present run build && node scripts/check-production-bundles.ts",
     "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {

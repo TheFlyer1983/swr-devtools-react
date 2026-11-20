@@ -28,6 +28,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./production": {
+      "types": "./dist/production.d.ts",
+      "default": "./dist/production.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
