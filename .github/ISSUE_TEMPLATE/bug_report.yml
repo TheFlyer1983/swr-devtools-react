@@ -1,0 +1,102 @@
+name: Bug report
+description: Something in swr-devtools-react doesn't work as expected.
+labels: ['type: bug']
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a bug. A minimal reproduction is the quickest way to get it fixed.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Render <SWRDevtools /> inside <SWRConfig>
+        2. Open the panel
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: reproduction
+    attributes:
+      label: Reproduction link
+      description: A CodeSandbox, StackBlitz or repository that shows the bug.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - '<SWRDevtools />'
+        - '<SWRDevtoolsPanel />'
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: entry
+    attributes:
+      label: Import path
+      options:
+        - swr-devtools-react
+        - swr-devtools-react/production
+    validations:
+      required: true
+
+  - type: input
+    id: package-version
+    attributes:
+      label: swr-devtools-react version
+      placeholder: 0.1.1
+    validations:
+      required: true
+
+  - type: input
+    id: swr-version
+    attributes:
+      label: SWR version
+      placeholder: 2.3.0
+    validations:
+      required: true
+
+  - type: input
+    id: react-version
+    attributes:
+      label: React version
+      placeholder: 19.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework
+      options:
+        - Vite
+        - Next.js (App Router)
+        - Next.js (Pages Router)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 131 on macOS 15
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console errors
+      description: Any errors from the browser console or terminal.
+      render: text

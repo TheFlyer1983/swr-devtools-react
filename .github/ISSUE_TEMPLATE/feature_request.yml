@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest something swr-devtools-react should do.
+labels: ['type: feature']
+body:
+  - type: markdown
+    attributes:
+      value: Check the [open issues](https://github.com/TheFlyer1983/swr-devtools-react/issues) first, in case it's already planned.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what makes it hard today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How you'd like it to work. Sketches or screenshots help.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Workarounds you use now, or how other devtools (such as TanStack Query Devtools) handle it.
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd like to open a PR for this.
