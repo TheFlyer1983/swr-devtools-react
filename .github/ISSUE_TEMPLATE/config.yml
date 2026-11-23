@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question
+    url: https://github.com/TheFlyer1983/swr-devtools-react/discussions/categories/q-a
+    about: Ask how to use swr-devtools-react, or check whether something is a bug.
+  - name: Feedback and ideas
+    url: https://github.com/TheFlyer1983/swr-devtools-react/discussions/categories/ideas
+    about: Share feedback or an early idea before it's ready to be a feature request.
