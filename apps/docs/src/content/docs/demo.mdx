@@ -1,0 +1,12 @@
+---
+title: Live demo
+description: Try the SWR devtools panel against a few live requests.
+---
+
+import { DevtoolsDemo } from '../../components/demo/DevtoolsDemo.tsx';
+
+The requests below run in your browser against a mock API. Underneath them is `<SWRDevtoolsPanel />`, showing the same SWR cache.
+
+Revalidate a request or page through the posts and watch the keys update. Select a key in the panel to inspect its data, edit it, revalidate it or delete it.
+
+<DevtoolsDemo client:only="react" />

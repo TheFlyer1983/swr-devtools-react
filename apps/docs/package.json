@@ -1,0 +1,28 @@
+{
+  "name": "@swr-devtools-react/docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Docs site for swr-devtools-react, built with Starlight.",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro sync && tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@astrojs/react": "^7.1.9",
+    "@astrojs/starlight": "^0.43.1",
+    "@swr-devtools-react/playground-shared": "workspace:*",
+    "astro": "^7.4.13",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "swr": "^2.5.1",
+    "swr-devtools-react": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "7.0.2"
+  }
+}

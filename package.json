@@ -12,6 +12,8 @@
     "test:watch": "vitest",
     "dev": "pnpm --filter @swr-devtools-react/playground-vite dev",
     "dev:next": "pnpm --filter @swr-devtools-react/playground-next dev",
+    "dev:docs": "pnpm --filter @swr-devtools-react/docs dev",
+    "build:docs": "pnpm --filter @swr-devtools-react/docs build",
     "check:prod": "pnpm build && pnpm --filter \"./playgrounds/*\" --if-present run build && node scripts/check-production-bundles.ts",
     "pack:react": "node scripts/pack-react.ts",
     "check:package": "pnpm pack:react && publint run --strict .pack/swr-devtools-react.tgz && attw .pack/swr-devtools-react.tgz --profile esm-only",
