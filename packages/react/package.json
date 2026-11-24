@@ -1,13 +1,20 @@
 {
   "name": "swr-devtools-react",
   "version": "0.1.1",
-  "description": "In-app devtools panel for SWR: inspect, revalidate, edit and delete cache keys.",
+  "description": "In-app devtools panel for SWR in React and Next.js apps: inspect, search, revalidate, edit and delete cache keys.",
   "keywords": [
     "cache",
+    "data-fetching",
     "debug",
+    "debugger",
     "devtools",
+    "devtools-panel",
+    "inspector",
+    "nextjs",
     "react",
-    "swr"
+    "react-hooks",
+    "swr",
+    "swr-devtools"
   ],
   "homepage": "https://github.com/TheFlyer1983/swr-devtools-react#readme",
   "bugs": "https://github.com/TheFlyer1983/swr-devtools-react/issues",
