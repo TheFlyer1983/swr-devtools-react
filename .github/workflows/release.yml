@@ -23,19 +23,23 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       dist-tag: ${{ steps.version.outputs.dist-tag }}
       prerelease: ${{ steps.version.outputs.prerelease }}
+      latest: ${{ steps.version.outputs.latest }}
     steps:
       - name: Check out code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Full history, so the tagged commit can be checked against main.
+          # Full history and all branches, so the tagged commit can be checked
+          # against main and the release branches.
           fetch-depth: 0
           persist-credentials: false
-      - name: Check the tagged commit is on main
+      - name: Check the tagged commit is on main or a release branch
         run: |
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "::error::$GITHUB_REF_NAME points at $GITHUB_SHA, which isn't on main. Tag a commit that has been merged to main."
+          branches="$(git branch -r --contains "$GITHUB_SHA" --format='%(refname:short)' | grep -xE 'origin/(main|release/.+)' || true)"
+          if [ -z "$branches" ]; then
+            echo "::error::$GITHUB_REF_NAME points at $GITHUB_SHA, which isn't on main or a release/* branch. Tag a commit that has been merged to one of them."
             exit 1
           fi
+          echo "Tagged commit is on: $(echo "$branches" | tr '\n' ' ')" >> "$GITHUB_STEP_SUMMARY"
       - name: Check the tag matches the package version
         id: version
         run: |
@@ -46,15 +50,27 @@ jobs:
             exit 1
           fi
           # Prereleases (1.0.0-beta.1, 1.0.0-rc.0) go to `next`, so
-          # `npm install swr-devtools-react` never picks them up.
+          # `npm install swr-devtools-react` never picks them up. A hotfix to an
+          # older line (0.1.3 after 0.2.0 is out) goes to `release-0.1`, so
+          # `latest` stays on the newest version.
           case "$package_version" in
-            *-*) dist_tag=next; prerelease=true ;;
-            *) dist_tag=latest; prerelease=false ;;
+            *-*) dist_tag=next; prerelease=true; latest=false ;;
+            *)
+              prerelease=false
+              current_latest="$(npm view swr-devtools-react dist-tags.latest 2>/dev/null || true)"
+              newest="$(printf '%s\n%s\n' "$current_latest" "$package_version" | sort -V | tail -n 1)"
+              if [ -z "$current_latest" ] || [ "$newest" = "$package_version" ]; then
+                dist_tag=latest; latest=true
+              else
+                dist_tag="release-${package_version%.*}"; latest=false
+              fi
+              ;;
           esac
           {
             echo "version=$package_version"
             echo "dist-tag=$dist_tag"
             echo "prerelease=$prerelease"
+            echo "latest=$latest"
           } >> "$GITHUB_OUTPUT"
           echo "Releasing $package_version to the npm \`$dist_tag\` dist-tag." >> "$GITHUB_STEP_SUMMARY"
       - name: Check CHANGELOG.md has an entry for the version
@@ -157,11 +173,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+          LATEST: ${{ needs.verify.outputs.latest }}
         run: |
           # A tag created through the GitHub UI already has a release: fill in
           # its notes rather than creating a second one.
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release edit "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$PRERELEASE"
+            gh release edit "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$PRERELEASE" --latest="$LATEST"
           else
-            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$PRERELEASE"
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$PRERELEASE" --latest="$LATEST"
           fi

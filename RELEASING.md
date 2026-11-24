@@ -51,7 +51,7 @@ Changesets only versions and writes the changelog here. It never publishes.
 
 4. Approve the `npm` environment deployment when the workflow asks, if the environment requires a reviewer.
 
-The workflow stops before publishing if the tag points at a commit that isn't on `main`, if the tag and `packages/react/package.json` disagree, or if `packages/react/CHANGELOG.md` has no section for the version. Delete the tag locally and on GitHub, fix the cause, then tag again:
+The workflow stops before publishing if the tag points at a commit that isn't on `main` or a `release/*` branch, if the tag and `packages/react/package.json` disagree, or if `packages/react/CHANGELOG.md` has no section for the version. Delete the tag locally and on GitHub, fix the cause, then tag again:
 
 ```bash
 git tag -d v0.1.0
@@ -68,6 +68,36 @@ pnpm changeset version   # 1.0.0-beta.0
 # ...release PR, merge, tag v1.0.0-beta.0
 pnpm changeset pre exit  # when the stable release is ready
 ```
+
+## Hotfixes
+
+Release fixes from `main` when you can: merge the fix, then cut a normal release. Changesets takes the biggest pending bump, so unreleased features ship alongside the fix.
+
+When `main` has work that can't ship yet, fix the released version on a release branch instead. The workflow publishes tags on `release/*` branches as well as `main`.
+
+1. Create the release branch from the version's tag, if it doesn't exist yet. Name it after the release line:
+
+   ```bash
+   git switch -c release/0.1.x v0.1.2
+   git push -u origin release/0.1.x
+   ```
+
+   Branch from `v0.1.2` or later. Earlier tags have a release workflow that only accepts tags on `main`, and a tag runs the workflow from its own commit.
+
+2. Branch from `release/0.1.x`, fix the bug, and run `pnpm changeset` with a patch bump. Open the PR against `release/0.1.x`. CI runs on it as it does for `main`.
+
+3. Cut the release on the release branch, as in [Cutting a release](#cutting-a-release), but with PRs against `release/0.1.x` and the tag on its merge commit.
+
+4. Bring the fix to `main`. `main` only takes squash and rebase merges, so open a PR from a branch off `main` that cherry-picks the fix and release commits:
+
+   ```bash
+   git switch -c fix/NN-port-hotfix main
+   git cherry-pick <fix commit> <release commit>
+   ```
+
+   Keep the hotfix's version and `CHANGELOG.md` section when resolving conflicts, so the next release from `main` bumps from it.
+
+If the hotfix version is older than npm's current `latest`, for example `0.1.3` after `0.2.0` is out, the workflow publishes it to a `release-0.1` dist-tag instead of `latest`, and doesn't mark its GitHub Release as the latest. Users on `^0.1.0` still get it, and `npm install swr-devtools-react` keeps installing `0.2.0`.
 
 ## One-time setup
 
@@ -92,6 +122,8 @@ A new trusted publisher expires if nothing is published through it within 2 days
 Then, under Publishing access, choose "Require two-factor authentication and disallow tokens". Trusted publishing keeps working, and a leaked token can't publish.
 
 **GitHub `npm` environment.** In the repo's Settings, then Environments, create `npm`. Add a deployment tag rule for `v*`, so only version tags can deploy to it. Adding yourself as a required reviewer is optional: it pauses each publish until you approve it.
+
+**Release branch protection.** In the repo's Settings, then Rules, the "Protect release branches" ruleset covers `release/**` with the same rules as `main`: changes go through PRs, the three CI checks must pass, and the branch can't be force-pushed or deleted.
 
 ## If a step fails
 
