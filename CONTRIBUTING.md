@@ -8,7 +8,7 @@ The [spec](docs/SPEC.md) decides what's in scope and records the decisions made 
 
 You need:
 
-- Node 24 (24.11 or later) or Node 26+. Node 25 isn't supported. `.node-version` pins 24, which `fnm` and similar version managers read.
+- Node 24 (24.11 or later) or Node 26+. Node 25 isn't supported. `.node-version` and `.nvmrc` pin 24, for `fnm`, `nvm` and similar version managers. `pnpm install` fails on other versions.
 - Corepack, which provides the pnpm version pinned in `package.json`. Run `corepack enable` once.
 
 Then:
