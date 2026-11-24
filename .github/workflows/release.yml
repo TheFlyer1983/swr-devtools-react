@@ -202,11 +202,13 @@ jobs:
         run: |
           # Decided now rather than taken from the publish job, so a release
           # published in between (or a re-run of this job alone) is counted.
-          # Only the newest stable version is marked latest.
+          # Only the newest stable version is marked latest. Uses the repo's
+          # tags, like the publish job, so a newer version whose GitHub Release
+          # step failed still counts.
           latest=false
           if [ "$PRERELEASE" = false ]; then
-            if ! tags="$(gh release list --exclude-drafts --exclude-pre-releases --limit 1000 --json tagName --jq '.[].tagName')"; then
-              echo "::error::Couldn't list the existing releases. Re-run the job."
+            if ! tags="$(gh api --paginate "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v" --jq '.[].ref | ltrimstr("refs/tags/")')"; then
+              echo "::error::Couldn't list the repository's version tags. Re-run the job."
               exit 1
             fi
             newest="$(printf '%s\n%s\n' "$tags" "$GITHUB_REF_NAME" | grep -xE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -n 1)"
