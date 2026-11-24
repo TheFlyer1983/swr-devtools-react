@@ -106,8 +106,6 @@ jobs:
       contents: read
       # npm trusted publishing: an OIDC token instead of an NPM_TOKEN secret.
       id-token: write
-    outputs:
-      latest: ${{ steps.dist-tag.outputs.latest }}
     steps:
       - name: Check out code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -137,7 +135,7 @@ jobs:
         # after 0.2.0) goes to `release-0.1`, so `latest` stays on the newest.
         run: |
           case "$VERSION" in
-            *-*) dist_tag=next; latest=false ;;
+            *-*) dist_tag=next ;;
             *)
               if ! current_latest="$(npm view swr-devtools-react dist-tags.latest)"; then
                 echo "::error::Couldn't read the current npm latest version. Re-run the job once the registry responds."
@@ -145,16 +143,13 @@ jobs:
               fi
               newest="$(printf '%s\n%s\n' "$current_latest" "$VERSION" | sort -V | tail -n 1)"
               if [ -z "$current_latest" ] || [ "$newest" = "$VERSION" ]; then
-                dist_tag=latest; latest=true
+                dist_tag=latest
               else
-                dist_tag="release-${VERSION%.*}"; latest=false
+                dist_tag="release-${VERSION%.*}"
               fi
               ;;
           esac
-          {
-            echo "dist-tag=$dist_tag"
-            echo "latest=$latest"
-          } >> "$GITHUB_OUTPUT"
+          echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
           echo "Publishing $VERSION to the npm \`$dist_tag\` dist-tag." >> "$GITHUB_STEP_SUMMARY"
       - name: Publish the checked tarball
         env:
@@ -167,6 +162,11 @@ jobs:
     needs: [verify, publish]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # One release job at a time, so reading the existing releases and marking
+    # this one latest can't interleave with another release doing the same.
+    concurrency:
+      group: github-release
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
@@ -192,12 +192,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PRERELEASE: ${{ needs.verify.outputs.prerelease }}
-          LATEST: ${{ needs.publish.outputs.latest }}
         run: |
+          # Decided now rather than taken from the publish job, so a release
+          # published in between (or a re-run of this job alone) is counted.
+          # Only the newest stable version is marked latest.
+          latest=false
+          if [ "$PRERELEASE" = false ]; then
+            if ! tags="$(gh release list --exclude-drafts --exclude-pre-releases --limit 1000 --json tagName --jq '.[].tagName')"; then
+              echo "::error::Couldn't list the existing releases. Re-run the job."
+              exit 1
+            fi
+            newest="$(printf '%s\n%s\n' "$tags" "$GITHUB_REF_NAME" | grep -xE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -n 1)"
+            if [ "$newest" = "$GITHUB_REF_NAME" ]; then
+              latest=true
+            fi
+          fi
+          echo "Marking the GitHub Release as latest: $latest" >> "$GITHUB_STEP_SUMMARY"
+
           # A tag created through the GitHub UI already has a release: fill in
           # its notes rather than creating a second one.
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release edit "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$PRERELEASE" --latest="$LATEST"
+            gh release edit "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$PRERELEASE" --latest="$latest"
           else
-            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$PRERELEASE" --latest="$LATEST"
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$PRERELEASE" --latest="$latest"
           fi

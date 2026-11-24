@@ -102,7 +102,7 @@ When `main` has work that can't ship yet, fix the released version on a release 
 
 If the hotfix version is older than npm's current `latest`, for example `0.1.3` after `0.2.0` is out, the workflow publishes it to a `release-0.1` dist-tag instead of `latest`, and doesn't mark its GitHub Release as the latest. Users on `^0.1.0` still get it, and `npm install swr-devtools-react` keeps installing `0.2.0`.
 
-The publish job decides this just before publishing, after any approval, and publish jobs run one at a time across releases. If the npm registry can't be reached, the job stops rather than guessing: re-run it once the registry responds.
+The publish job decides this just before publishing, after any approval, and publish jobs run one at a time across releases. If the npm registry can't be reached, the job stops rather than guessing: re-run it once the registry responds. The GitHub Release job makes the same check separately when it runs, against the existing releases, and release jobs also run one at a time. So a delayed or re-run release job never marks an older version as latest.
 
 ## One-time setup
 
