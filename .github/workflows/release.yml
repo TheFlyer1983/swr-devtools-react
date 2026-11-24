@@ -21,9 +21,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       version: ${{ steps.version.outputs.version }}
-      dist-tag: ${{ steps.version.outputs.dist-tag }}
       prerelease: ${{ steps.version.outputs.prerelease }}
-      latest: ${{ steps.version.outputs.latest }}
     steps:
       - name: Check out code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,30 +47,14 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME doesn't match packages/react/package.json version $package_version."
             exit 1
           fi
-          # Prereleases (1.0.0-beta.1, 1.0.0-rc.0) go to `next`, so
-          # `npm install swr-devtools-react` never picks them up. A hotfix to an
-          # older line (0.1.3 after 0.2.0 is out) goes to `release-0.1`, so
-          # `latest` stays on the newest version.
           case "$package_version" in
-            *-*) dist_tag=next; prerelease=true; latest=false ;;
-            *)
-              prerelease=false
-              current_latest="$(npm view swr-devtools-react dist-tags.latest 2>/dev/null || true)"
-              newest="$(printf '%s\n%s\n' "$current_latest" "$package_version" | sort -V | tail -n 1)"
-              if [ -z "$current_latest" ] || [ "$newest" = "$package_version" ]; then
-                dist_tag=latest; latest=true
-              else
-                dist_tag="release-${package_version%.*}"; latest=false
-              fi
-              ;;
+            *-*) prerelease=true ;;
+            *) prerelease=false ;;
           esac
           {
             echo "version=$package_version"
-            echo "dist-tag=$dist_tag"
             echo "prerelease=$prerelease"
-            echo "latest=$latest"
           } >> "$GITHUB_OUTPUT"
-          echo "Releasing $package_version to the npm \`$dist_tag\` dist-tag." >> "$GITHUB_STEP_SUMMARY"
       - name: Check CHANGELOG.md has an entry for the version
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -114,10 +96,18 @@ jobs:
     # Protection rules (such as required reviewers) on this environment gate
     # the publish. npm's trusted publisher entry names it too.
     environment: npm
+    # One publish at a time across all releases, so two can't both decide
+    # they're `latest`. GitHub keeps one waiting run per group: with three
+    # releases at once, the middle one is cancelled and needs a re-run.
+    concurrency:
+      group: npm-publish
+      cancel-in-progress: false
     permissions:
       contents: read
       # npm trusted publishing: an OIDC token instead of an NPM_TOKEN secret.
       id-token: write
+    outputs:
+      latest: ${{ steps.dist-tag.outputs.latest }}
     steps:
       - name: Check out code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -137,9 +127,38 @@ jobs:
         run: pnpm build
       - name: Pack, then check the tarball with publint and arethetypeswrong
         run: pnpm check:package
+      - name: Choose the npm dist-tag
+        id: dist-tag
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        # Decided here, after the environment approval and just before
+        # publishing, so a release published while this one waited is counted.
+        # Prereleases go to `next`. A stable version older than `latest` (0.1.3
+        # after 0.2.0) goes to `release-0.1`, so `latest` stays on the newest.
+        run: |
+          case "$VERSION" in
+            *-*) dist_tag=next; latest=false ;;
+            *)
+              if ! current_latest="$(npm view swr-devtools-react dist-tags.latest)"; then
+                echo "::error::Couldn't read the current npm latest version. Re-run the job once the registry responds."
+                exit 1
+              fi
+              newest="$(printf '%s\n%s\n' "$current_latest" "$VERSION" | sort -V | tail -n 1)"
+              if [ -z "$current_latest" ] || [ "$newest" = "$VERSION" ]; then
+                dist_tag=latest; latest=true
+              else
+                dist_tag="release-${VERSION%.*}"; latest=false
+              fi
+              ;;
+          esac
+          {
+            echo "dist-tag=$dist_tag"
+            echo "latest=$latest"
+          } >> "$GITHUB_OUTPUT"
+          echo "Publishing $VERSION to the npm \`$dist_tag\` dist-tag." >> "$GITHUB_STEP_SUMMARY"
       - name: Publish the checked tarball
         env:
-          DIST_TAG: ${{ needs.verify.outputs.dist-tag }}
+          DIST_TAG: ${{ steps.dist-tag.outputs.dist-tag }}
         # Trusted publishing needs npm 11.5.1 or later, which Node 24.11+ ships.
         run: npm publish .pack/swr-devtools-react.tgz --provenance --access public --tag "$DIST_TAG"
 
@@ -173,7 +192,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PRERELEASE: ${{ needs.verify.outputs.prerelease }}
-          LATEST: ${{ needs.verify.outputs.latest }}
+          LATEST: ${{ needs.publish.outputs.latest }}
         run: |
           # A tag created through the GitHub UI already has a release: fill in
           # its notes rather than creating a second one.
