@@ -1,6 +1,6 @@
 {
   "name": "swr-devtools-react",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "In-app devtools panel for SWR in React and Next.js apps: inspect, search, revalidate, edit and delete cache keys.",
   "keywords": [
     "cache",

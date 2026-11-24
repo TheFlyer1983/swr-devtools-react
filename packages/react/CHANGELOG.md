@@ -1,5 +1,11 @@
 # swr-devtools-react
 
+## 0.1.2
+
+### Patch Changes
+
+- ff290e4: Clearer npm description and more keywords, so the package is easier to find in npm search.
+
 ## 0.1.1
 
 ### Patch Changes
