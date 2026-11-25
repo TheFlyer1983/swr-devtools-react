@@ -7,6 +7,7 @@
   "exports": {
     "./app": "./src/App.tsx",
     "./fetcher": "./src/fetcher.ts",
+    "./fixtures": "./src/fixtures/index.ts",
     "./mock-routes": "./src/mock-routes.ts",
     "./styles.css": "./src/styles.css"
   },
