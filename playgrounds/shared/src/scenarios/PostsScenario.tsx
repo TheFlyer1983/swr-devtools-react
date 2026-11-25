@@ -14,7 +14,8 @@ interface PostsPage {
 export function PostsScenario() {
   const [page, setPage] = useState(1);
   const { data, error, isLoading, isValidating } = useSWR<PostsPage>(['/api/posts', page] as const);
-  const isLastPage = data !== undefined && page >= data.totalPages;
+  // Until the current page loads, its totalPages is unknown, so Next waits for it.
+  const canGoNext = data !== undefined && page < data.totalPages;
   return (
     <Card
       title="Array key (pagination)"
@@ -31,7 +32,7 @@ export function PostsScenario() {
             Page {page}
             {data ? ` of ${data.totalPages}` : null}
           </span>
-          <button disabled={isLastPage} onClick={() => setPage((p) => p + 1)}>
+          <button disabled={!canGoNext} onClick={() => setPage((p) => p + 1)}>
             Next
           </button>
         </>

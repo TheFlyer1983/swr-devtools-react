@@ -43,7 +43,8 @@ function PostsRequest() {
   const [page, setPage] = useState(1);
   const swr = useSWR<{ totalPages: number }>(['/api/posts', page]);
   const status = statusOf(swr);
-  const isLastPage = swr.data !== undefined && page >= swr.data.totalPages;
+  // Until the current page loads, its totalPages is unknown, so Next waits for it.
+  const canGoNext = swr.data !== undefined && page < swr.data.totalPages;
   return (
     <li className="swr-demo__request">
       <code>['/api/posts', {page}]</code>
@@ -52,7 +53,7 @@ function PostsRequest() {
         <button type="button" disabled={page === 1} onClick={() => setPage(page - 1)}>
           Previous
         </button>
-        <button type="button" disabled={isLastPage} onClick={() => setPage(page + 1)}>
+        <button type="button" disabled={!canGoNext} onClick={() => setPage(page + 1)}>
           Next
         </button>
       </span>
