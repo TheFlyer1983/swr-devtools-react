@@ -1,0 +1,84 @@
+.swr-demo {
+  margin-block: 1.5rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.swr-demo__requests {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  list-style: none;
+  background: var(--sl-color-gray-6);
+}
+
+.swr-demo__request {
+  display: grid;
+  grid-template-columns: 1fr 6rem 11rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.375rem;
+  font-size: var(--sl-text-sm);
+}
+
+.swr-demo__request > button,
+.swr-demo__pager {
+  justify-self: end;
+}
+
+.swr-demo__pager {
+  display: inline-flex;
+  gap: 0.375rem;
+}
+
+@media (max-width: 40rem) {
+  .swr-demo__request {
+    grid-template-columns: 1fr auto;
+  }
+
+  .swr-demo__request > button,
+  .swr-demo__pager {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+.swr-demo button {
+  padding: 0.125rem 0.625rem;
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 0.25rem;
+  background: var(--sl-color-black);
+  color: var(--sl-color-white);
+  font: inherit;
+  cursor: pointer;
+}
+
+.swr-demo button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.swr-demo__status {
+  font-size: var(--sl-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.swr-demo__status--success {
+  color: var(--sl-color-green);
+}
+
+.swr-demo__status--loading,
+.swr-demo__status--validating {
+  color: var(--sl-color-orange);
+}
+
+.swr-demo__status--error {
+  color: var(--sl-color-red);
+}
+
+/* <SWRDevtoolsPanel /> fills its container, so the container sets the size. */
+.swr-demo__panel {
+  height: 26rem;
+  border-top: 1px solid var(--sl-color-hairline);
+}

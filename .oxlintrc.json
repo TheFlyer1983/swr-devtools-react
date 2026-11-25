@@ -15,14 +15,21 @@
     "builtin": true,
     "browser": true
   },
-  "ignorePatterns": ["**/dist/**", "**/coverage/**", "**/.next/**", "**/next-env.d.ts"],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/coverage/**",
+    "**/.next/**",
+    "**/next-env.d.ts",
+    "**/.astro/**"
+  ],
   "overrides": [
     {
       "files": [
         "**/vitest.setup.ts",
         "playgrounds/*/src/main.tsx",
         "playgrounds/next/app/layout.tsx",
-        "playgrounds/next/pages/_app.tsx"
+        "playgrounds/next/pages/_app.tsx",
+        "apps/docs/src/components/**/*.tsx"
       ],
       "rules": {
         "import/no-unassigned-import": "off"

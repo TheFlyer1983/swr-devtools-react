@@ -9,6 +9,7 @@
     "**/coverage/**",
     "**/.next/**",
     "**/next-env.d.ts",
+    "**/.astro/**",
     "pnpm-lock.yaml"
   ]
 }

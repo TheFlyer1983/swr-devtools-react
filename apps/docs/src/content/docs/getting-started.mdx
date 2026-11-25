@@ -1,0 +1,28 @@
+---
+title: Getting started
+description: Add the SWR devtools panel to a React app.
+---
+
+Install the package:
+
+```sh
+npm install swr-devtools-react
+```
+
+Place `<SWRDevtools />` inside your app's `<SWRConfig>`:
+
+```tsx
+import { SWRConfig } from 'swr';
+import { SWRDevtools } from 'swr-devtools-react';
+
+export function Root() {
+  return (
+    <SWRConfig value={{ fetcher }}>
+      <App />
+      <SWRDevtools />
+    </SWRConfig>
+  );
+}
+```
+
+The panel renders nothing in production builds unless you import from `swr-devtools-react/production`.
