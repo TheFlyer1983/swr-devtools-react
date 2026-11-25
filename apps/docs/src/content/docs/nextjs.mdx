@@ -1,0 +1,83 @@
+---
+title: Next.js
+description: Add the SWR devtools to a Next.js app with the App Router or the Pages Router.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Both routers work. The package starts with `'use client'`, so you don't need to wrap it in a client component yourself.
+
+## App Router
+
+Render `<SWRDevtools />` in your root layout, inside the client component that holds your `<SWRConfig>`:
+
+```tsx
+// app/providers.tsx
+'use client';
+
+import type { ReactNode } from 'react';
+import { SWRConfig } from 'swr';
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+export function Providers({ children }: { children: ReactNode }) {
+  return <SWRConfig value={{ fetcher }}>{children}</SWRConfig>;
+}
+```
+
+```tsx
+// app/layout.tsx (a server component)
+import type { ReactNode } from 'react';
+import { SWRDevtools } from 'swr-devtools-react';
+import { Providers } from './providers';
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>
+          {children}
+          <SWRDevtools />
+        </Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+`<SWRConfig>` with a fetcher has to live in a client component, because a server component can't pass a function as a prop. `<SWRDevtools />` can sit in the server layout as long as it's inside `<Providers>`.
+
+## Pages Router
+
+Put it in `pages/_app.tsx`, so every page gets it:
+
+```tsx
+// pages/_app.tsx
+import type { AppProps } from 'next/app';
+import { SWRConfig } from 'swr';
+import { SWRDevtools } from 'swr-devtools-react';
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  return (
+    <SWRConfig value={{ fetcher }}>
+      <Component {...pageProps} />
+      <SWRDevtools />
+    </SWRConfig>
+  );
+}
+```
+
+<Aside type="caution" title="Production-only installs">
+  The Pages Router loads `swr-devtools-react` from `node_modules` when it renders a page on the
+  server. If your server installs only production dependencies, for example with `npm ci --omit=dev`
+  in a Docker image, those pages fail with a 500. Install the package as a regular dependency, or
+  add it to `transpilePackages`. [Production and
+  staging](/production/#dev-dependency-or-regular-dependency) has the details. The App Router isn't
+  affected.
+</Aside>
+
+## Hydration
+
+The devtools render only in the browser, after hydration, so they don't cause hydration mismatches with either router.

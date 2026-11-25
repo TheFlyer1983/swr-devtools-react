@@ -1,0 +1,56 @@
+---
+title: API reference
+description: Props and exports of swr-devtools-react.
+---
+
+The package has two entry points with the same exports:
+
+- `swr-devtools-react` renders nothing in production builds. Use it by default.
+- `swr-devtools-react/production` always renders. See [Forcing it on](/production/#forcing-it-on-eg-staging).
+
+Both components must be inside the `<SWRConfig>` whose cache you want to see, or anywhere if your app has no `<SWRConfig>`.
+
+## `<SWRDevtools />`
+
+A button labelled "SWR" in a corner of the viewport, which opens the panel docked to the bottom or right.
+
+```tsx
+<SWRDevtools initialIsOpen buttonPosition="bottom-left" position="right" />
+```
+
+| Prop             | Type                                                                 | Default          | Description                                                                                                                          |
+| ---------------- | -------------------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `initialIsOpen`  | `boolean`                                                            | `false`          | Start with the panel open. Once the user opens or closes the panel, their choice is saved in `localStorage` and wins over this prop. |
+| `buttonPosition` | `'top-left'` \| `'top-right'` \| `'bottom-left'` \| `'bottom-right'` | `'bottom-right'` | Which corner of the viewport the toggle button sits in.                                                                              |
+| `position`       | `'bottom'` \| `'right'`                                              | `'bottom'`       | Where the panel docks.                                                                                                               |
+
+Drag the panel's edge to resize it, or focus the edge and use the arrow keys. The size is saved in `localStorage` too.
+
+## `<SWRDevtoolsPanel />`
+
+The panel on its own, with no toggle button and no props. It fills the element you render it in, so give that element a size. Use it to put the devtools in your own layout, such as a sidebar or a tab in another devtools tool.
+
+```tsx
+import { SWRDevtoolsPanel } from 'swr-devtools-react';
+
+<SWRConfig value={{ fetcher }}>
+  <App />
+  <div style={{ height: 400 }}>
+    <SWRDevtoolsPanel />
+  </div>
+</SWRConfig>;
+```
+
+The [live demo](/demo/) uses `<SWRDevtoolsPanel />`.
+
+## Types
+
+| Type               | Definition                                                           |
+| ------------------ | -------------------------------------------------------------------- |
+| `SWRDevtoolsProps` | The props of `<SWRDevtools />`, above.                               |
+| `ButtonPosition`   | `'top-left'` \| `'top-right'` \| `'bottom-left'` \| `'bottom-right'` |
+| `PanelPosition`    | `'bottom'` \| `'right'`                                              |
+
+```ts
+import type { ButtonPosition, PanelPosition, SWRDevtoolsProps } from 'swr-devtools-react';
+```
