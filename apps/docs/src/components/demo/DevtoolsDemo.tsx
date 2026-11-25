@@ -8,13 +8,22 @@ import { installMockFetch } from './mock-fetch.ts';
 
 type Status = 'loading' | 'validating' | 'success' | 'error';
 
+interface SWRState {
+  data: unknown;
+  error: unknown;
+  isValidating: boolean;
+}
+
+function statusOf({ data, error, isValidating }: SWRState): Status {
+  if (error) return 'error';
+  if (data === undefined) return 'loading';
+  if (isValidating) return 'validating';
+  return 'success';
+}
+
 function useRequest(key: PlaygroundKey) {
-  const { data, error, isValidating, mutate } = useSWR(key);
-  let status: Status = 'success';
-  if (error) status = 'error';
-  else if (data === undefined) status = 'loading';
-  else if (isValidating) status = 'validating';
-  return { status, revalidate: () => void mutate() };
+  const swr = useSWR(key);
+  return { status: statusOf(swr), revalidate: () => void swr.mutate() };
 }
 
 function Request({ label, swrKey }: { label: string; swrKey: PlaygroundKey }) {
@@ -32,7 +41,10 @@ function Request({ label, swrKey }: { label: string; swrKey: PlaygroundKey }) {
 
 function PostsRequest() {
   const [page, setPage] = useState(1);
-  const { status } = useRequest(['/api/posts', page]);
+  const swr = useSWR<{ totalPages: number }>(['/api/posts', page]);
+  const status = statusOf(swr);
+  // Until the current page loads, its totalPages is unknown, so Next waits for it.
+  const canGoNext = swr.data !== undefined && page < swr.data.totalPages;
   return (
     <li className="swr-demo__request">
       <code>['/api/posts', {page}]</code>
@@ -41,7 +53,7 @@ function PostsRequest() {
         <button type="button" disabled={page === 1} onClick={() => setPage(page - 1)}>
           Previous
         </button>
-        <button type="button" onClick={() => setPage(page + 1)}>
+        <button type="button" disabled={!canGoNext} onClick={() => setPage(page + 1)}>
           Next
         </button>
       </span>
@@ -60,7 +72,7 @@ export function DevtoolsDemo() {
     <SWRConfig value={{ fetcher, provider: () => cache }}>
       <div className="swr-demo not-content">
         <ul className="swr-demo__requests">
-          <Request label="'/api/user'" swrKey="/api/user" />
+          <Request label="'/api/users/1'" swrKey="/api/users/1" />
           <PostsRequest />
           <Request label="'/api/slow'" swrKey="/api/slow" />
           <Request label="'/api/error'" swrKey="/api/error" />

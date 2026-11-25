@@ -17,6 +17,13 @@ export default defineConfig({
           environment: 'jsdom',
           setupFiles: ['./vitest.setup.ts']
         }
+      },
+      {
+        test: {
+          name: 'playground-shared',
+          root: './playgrounds/shared',
+          environment: 'node'
+        }
       }
     ]
   }

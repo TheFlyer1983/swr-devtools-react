@@ -58,6 +58,8 @@ docs/           The spec and spike write-ups.
 
 Both playgrounds run the same demo app from `playgrounds/shared`. Each scenario exercises part of SWR the panel has to handle: a slow request, an error, a ticker that refreshes, a search with changing keys, infinite loading and so on. A mock API inside each playground serves the data, so there's no backend to run.
 
+The mock API's routes are in `playgrounds/shared/src/mock-routes.ts`. They serve users, posts, comments and todos shaped like [JSONPlaceholder](https://jsonplaceholder.typicode.com)'s, plus `/api/error` (always a 500) and `/api/slow` (2 seconds). The data is in `playgrounds/shared/src/fixtures`. It's hand-written or generated with a fixed seed, so it's identical on every run and screenshots stay stable. User 1 (`/api/users/1`) is a large, deeply nested object for trying the JSON tree and the edit view.
+
 ### Vite
 
 ```bash
