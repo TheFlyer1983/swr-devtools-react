@@ -96,6 +96,8 @@ jobs:
     # Protection rules (such as required reviewers) on this environment gate
     # the publish. npm's trusted publisher entry names it too.
     environment: npm
+    outputs:
+      dist-tag: ${{ steps.dist-tag.outputs.dist-tag }}
     # One publish at a time across all releases, so two can't both decide
     # they're `latest`. GitHub keeps one waiting run per group: with three
     # releases at once, the middle one is cancelled and needs a re-run.
@@ -163,6 +165,23 @@ jobs:
           DIST_TAG: ${{ steps.dist-tag.outputs.dist-tag }}
         # Trusted publishing needs npm 11.5.1 or later, which Node 24.11+ ships.
         run: npm publish .pack/swr-devtools-react.tgz --provenance --access public --tag "$DIST_TAG"
+
+  docs:
+    name: Deploy docs
+    needs: publish
+    # Only when this version became npm's `latest`. Prereleases (`next`) and
+    # hotfixes to older lines (`release-0.1`) leave the docs on the newest
+    # stable version.
+    if: needs.publish.outputs.dist-tag == 'latest'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/docs-deploy.yml
+    with:
+      ref: ${{ github.ref_name }}
+    secrets:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
   release:
     name: GitHub Release
