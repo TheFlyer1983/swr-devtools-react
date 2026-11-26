@@ -1,6 +1,8 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { StrictMode, useState, type ReactNode } from 'react';
 import useSWR, { SWRConfig, useSWRConfig, type Cache } from 'swr';
+import useSWRInfinite from 'swr/infinite';
+import useSWRSubscription from 'swr/subscription';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SWRDevtoolsPanel } from './swr-devtools-panel.tsx';
 
@@ -207,6 +209,84 @@ describe('<SWRDevtoolsPanel />', () => {
     });
 
     expect(await panel().findByText('/api/new')).toBeInTheDocument();
+  });
+
+  describe('hook counts', () => {
+    const hooksOf = (label: string) => rowFor(label).querySelector('.hooks')?.textContent;
+
+    it('shows how many hooks use each key, and marks keys with none as unused', async () => {
+      render(
+        <Wrapper cache={new Map([['/api/old', { data: 'stale' }]])}>
+          <User fetcher={() => Promise.resolve('Ada')} />
+          <User fetcher={() => Promise.resolve('Ada')} />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+      expect(await screen.findAllByText('user: Ada')).toHaveLength(2);
+
+      expect(hooksOf('/api/user')).toBe('2 hooks');
+      expect(hooksOf('/api/old')).toBe('Unused');
+      expect(rowFor('/api/old')).toHaveAttribute('data-unused');
+      expect(rowFor('/api/user')).not.toHaveAttribute('data-unused');
+    });
+
+    it('marks a key unused once its hook unmounts', async () => {
+      function Toggle() {
+        const [shown, setShown] = useState(true);
+        return (
+          <>
+            <button onClick={() => setShown(false)}>unmount</button>
+            {shown && <User fetcher={() => Promise.resolve('Ada')} />}
+          </>
+        );
+      }
+      render(
+        <Wrapper cache={new Map()}>
+          <Toggle />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+      expect(await screen.findByText('user: Ada')).toBeInTheDocument();
+      expect(hooksOf('/api/user')).toBe('1 hook');
+
+      fireEvent.click(screen.getByRole('button', { name: 'unmount' }));
+
+      // Unmounting writes nothing to the cache, so the panel checks on an interval.
+      await waitFor(() => expect(hooksOf('/api/user')).toBe('Unused'), { timeout: 2000 });
+    });
+
+    it('counts each hook once under StrictMode', async () => {
+      render(
+        <StrictMode>
+          <Wrapper cache={new Map()}>
+            <User fetcher={() => Promise.resolve('Ada')} />
+            <SWRDevtoolsPanel />
+          </Wrapper>
+        </StrictMode>
+      );
+      expect(await screen.findByText('user: Ada')).toBeInTheDocument();
+
+      expect(hooksOf('/api/user')).toBe('1 hook');
+    });
+
+    it('counts subscription hooks on their key', async () => {
+      function Prices() {
+        const { data } = useSWRSubscription('/ws/prices', (_key, { next }) => {
+          next(null, 1);
+          return () => {};
+        });
+        return <p>prices: {data ?? '…'}</p>;
+      }
+      render(
+        <Wrapper cache={new Map()}>
+          <Prices />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+      expect(await screen.findByText('prices: 1')).toBeInTheDocument();
+
+      expect(hooksOf('/ws/prices')).toBe('1 hook');
+    });
   });
 
   it("doesn't submit a form it sits inside", () => {
@@ -532,18 +612,74 @@ describe('<SWRDevtoolsPanel />', () => {
       expect(calls).toBe(1);
     });
 
-    it('keeps Revalidate enabled for standard and infinite keys', () => {
-      renderCache([
-        ['/api/user', { data: 'Ada' }],
-        ['$inf$/api/page/0', { data: [] }]
-      ]);
-
-      for (const label of ['/api/user', '/api/page/0']) {
-        select(label);
-        expect(detail().getByRole('button', { name: 'Revalidate' })).not.toHaveAttribute(
-          'aria-disabled'
+    // The $inf$ key and its first page share a label, so rows are picked by kind.
+    function renderPages() {
+      function Pages() {
+        const { data } = useSWRInfinite(
+          (index) => `/api/page/${index}`,
+          (key: string) => Promise.resolve(key),
+          { initialSize: 2 }
         );
+        return <p>pages: {data?.length ?? '…'}</p>;
       }
+      render(
+        <Wrapper cache={new Map()}>
+          <User fetcher={() => Promise.resolve('Ada')} />
+          <Pages />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+    }
+
+    const selectInfinite = () => {
+      const row = panel()
+        .getAllByRole('listitem')
+        .find((item) => within(item).queryByText('Infinite'));
+      if (!row) throw new Error('No infinite row');
+      fireEvent.click(within(row).getByRole('button', { name: '/api/page/0' }));
+    };
+
+    it('keeps Revalidate enabled for keys with a mounted hook', async () => {
+      renderPages();
+      expect(await screen.findByText('pages: 2')).toBeInTheDocument();
+
+      select('/api/user');
+      expect(detail().getByRole('button', { name: 'Revalidate' })).not.toHaveAttribute(
+        'aria-disabled'
+      );
+      selectInfinite();
+      expect(detail().getByRole('button', { name: 'Revalidate' })).not.toHaveAttribute(
+        'aria-disabled'
+      );
+    });
+
+    it('disables Revalidate for keys with no mounted hook, and says why', async () => {
+      // useSWRInfinite caches each page under its own key, with no hook on it.
+      renderPages();
+      expect(await screen.findByText('pages: 2')).toBeInTheDocument();
+
+      select('/api/page/1');
+
+      const revalidate = detail().getByRole('button', { name: 'Revalidate' });
+      expect(revalidate).toHaveAttribute('aria-disabled', 'true');
+      expect(revalidate).toHaveAccessibleDescription(/No mounted hook/);
+    });
+
+    it('shows how many hooks use the key', async () => {
+      render(
+        <Wrapper cache={new Map([['/api/old', { data: 'stale' }]])}>
+          <User fetcher={() => Promise.resolve('Ada')} />
+          <User fetcher={() => Promise.resolve('Ada')} />
+          <SWRDevtoolsPanel />
+        </Wrapper>
+      );
+      expect(await screen.findAllByText('user: Ada')).toHaveLength(2);
+
+      select('/api/user');
+      expect(detail().getByText('2 mounted')).toBeInTheDocument();
+
+      select('/api/old');
+      expect(detail().getByText(/^None mounted/)).toBeInTheDocument();
     });
 
     describe('editing data', () => {

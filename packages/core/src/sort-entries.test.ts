@@ -13,6 +13,7 @@ function entry(label: string, patch: Partial<CacheEntry> = {}): CacheEntry {
     isLoading: false,
     isValidating: false,
     updatedAt: 0,
+    hooks: undefined,
     ...patch
   };
 }

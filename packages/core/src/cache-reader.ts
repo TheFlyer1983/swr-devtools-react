@@ -1,5 +1,6 @@
 import type { Cache } from 'swr';
 import { formatKey } from './format-key.ts';
+import { readHookCounts } from './hook-counts.ts';
 import { getKeyKind, type KeyKind } from './key-kind.ts';
 import { getStatus, type KeyStatus } from './status.ts';
 
@@ -17,6 +18,11 @@ export interface CacheEntry {
   isValidating: boolean;
   /** When the data was last fetched successfully or changed (ms since epoch). */
   updatedAt: number;
+  /**
+   * How many mounted hooks use the key. 0 means unused: SWR keeps a key in the
+   * cache after its hooks unmount. `undefined` when the count can't be read.
+   */
+  hooks: number | undefined;
 }
 
 export interface CacheReader {
@@ -45,6 +51,7 @@ export function createCacheReader(): CacheReader {
     read(cache, now = Date.now()) {
       const entries: CacheEntry[] = [];
       const present = new Set<string>();
+      const hookCounts = readHookCounts(cache);
 
       for (const key of cache.keys()) {
         const state = cache.get(key);
@@ -67,7 +74,8 @@ export function createCacheReader(): CacheReader {
           error: state.error,
           isLoading: state.isLoading ?? false,
           isValidating,
-          updatedAt
+          updatedAt,
+          hooks: hookCounts && (hookCounts.get(key) ?? 0)
         });
       }
 

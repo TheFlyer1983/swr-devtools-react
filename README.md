@@ -11,7 +11,7 @@ The full docs, with a live demo, are at [swr-devtools-react.theflyer1983.dev](ht
 
 ## Features
 
-- Every key in the SWR cache, with a status badge (loading, validating, success, error, idle) and the time since it was last updated. The list updates live.
+- Every key in the SWR cache, with a status badge (loading, validating, success, error, idle), how many mounted hooks use it, and the time since it was last updated. Keys no hook uses any more are marked Unused. The list updates live.
 - Array and object keys shown readably. `useSWRInfinite` and `useSWRSubscription` keys are labelled.
 - Search keys by text, and sort by key, status or last updated.
 - A detail view with the full key, any error, and the data as a collapsible JSON tree.
@@ -237,13 +237,14 @@ Either way, the browser gets the same production bundle. Installing the package 
 - **Deleting a key** removes it from the cache and tells mounted hooks. A hook using `keepPreviousData` keeps showing its last data until it next fetches, because SWR keeps that copy inside the hook.
 - **Clear all** on SWR 2.5 or later uses SWR's `unload()`, which also cancels in-flight requests and drops `keepPreviousData` copies. On older SWR it deletes keys one by one, with the same limit as above.
 - **Several caches.** Only the nearest `<SWRConfig>`'s cache is shown. Choosing between caches is tracked in [#25](https://github.com/TheFlyer1983/swr-devtools-react/issues/25).
-- **Subscription keys can't be revalidated.** `useSWRSubscription` hooks have no fetcher, so there's nothing to refetch. Revalidate is disabled for them.
+- **Revalidate needs a mounted hook with a fetcher.** `mutate(key)` refetches through a hook using the key, so Revalidate is disabled for keys no mounted hook uses, such as `useSWRInfinite`'s page keys. It's also disabled for Subscription keys, because `useSWRSubscription` hooks have no fetcher.
+- **Hook counts read SWR internals.** SWR has no public way to count the hooks using a key, so the panel reads SWR's internal list of them. If a future SWR release changes that list, the panel stops showing counts rather than showing wrong ones. Unmounting a hook doesn't write to the cache, so the panel checks for unmounts every 500 ms.
 - **Polling mode.** If the cache object can't be changed, for example because it's frozen, the panel checks it every 250 ms instead of seeing each write. The header shows `(poll)` instead of `(patch)`. States that last less than a check, such as a very fast request, can be missed.
 - **Data that isn't JSON** can't be edited if it has circular references or BigInts. Dates, Maps and similar values can be edited, but applying the edit saves them as plain JSON.
 
 ## Roadmap
 
-Next up are a TanStack Devtools plugin and observer counts per key. The [spec](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/docs/SPEC.md) lists what's planned, and the [project board](https://github.com/users/TheFlyer1983/projects/7) shows what's in progress.
+Next up is a TanStack Devtools plugin. The [spec](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/docs/SPEC.md) lists what's planned, and the [project board](https://github.com/users/TheFlyer1983/projects/7) shows what's in progress.
 
 ## Contributing
 

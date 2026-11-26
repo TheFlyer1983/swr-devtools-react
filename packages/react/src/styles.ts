@@ -459,6 +459,22 @@ textarea:focus-visible {
   border-radius: var(--swr-dt-radius-sm);
 }
 
+.hooks {
+  flex: none;
+  font-size: var(--swr-dt-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--swr-dt-color-muted);
+}
+
+.hooks[data-unused] {
+  font-style: italic;
+}
+
+/* Unused keys stay listed, but recede. */
+.key-row[data-unused] .key {
+  color: var(--swr-dt-color-muted);
+}
+
 .age {
   flex: none;
   min-width: 56px;

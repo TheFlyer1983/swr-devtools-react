@@ -15,7 +15,7 @@ Try them in the demo below. Revalidating `/api/slow` takes two seconds and chang
 
 Revalidate refetches the key, the same as calling `mutate(key)`. The request goes through the hook that's using the key, with its fetcher, and the status changes to Validating while it runs, or Loading if the key has no data.
 
-It does nothing if no mounted hook uses the key, because there's no fetcher to call. It's disabled for Subscription keys, which have no fetcher.
+It's disabled for keys marked Unused, because with no mounted hook there's no fetcher to call. That includes `useSWRInfinite`'s page keys: revalidate the Infinite key to refetch its pages. It's also disabled for Subscription keys, which have no fetcher. Hover over the button to see why.
 
 ## Delete
 
