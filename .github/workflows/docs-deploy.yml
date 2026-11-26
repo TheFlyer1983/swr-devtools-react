@@ -159,7 +159,12 @@ jobs:
         run: |
           args=()
           if [ "$TARGET" = production ]; then args+=(--prod); fi
-          url="$(npx --yes "$VERCEL_CLI" deploy --prebuilt --json "${args[@]}" --token="$VERCEL_TOKEN" | jq -er '.deployment.url')"
+          # The CLI prints only the deployment URL to stdout; progress goes to stderr.
+          url="$(npx --yes "$VERCEL_CLI" deploy --prebuilt "${args[@]}" --token="$VERCEL_TOKEN")"
+          if ! [[ "$url" =~ ^https://[^[:space:]]+$ ]]; then
+            echo "::error::Expected a deployment URL from vercel deploy, got: $url"
+            exit 1
+          fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed to $url" >> "$GITHUB_STEP_SUMMARY"
       # Preview URLs need a Vercel login. The custom domain makes main's
@@ -170,5 +175,5 @@ jobs:
           URL: ${{ steps.deploy.outputs.url }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          npx --yes "$VERCEL_CLI" alias set "$URL" "$NEXT_DOMAIN" --token="$VERCEL_TOKEN"
+          npx --yes "$VERCEL_CLI" alias set "${URL#https://}" "$NEXT_DOMAIN" --token="$VERCEL_TOKEN"
           echo "Aliased to https://$NEXT_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
