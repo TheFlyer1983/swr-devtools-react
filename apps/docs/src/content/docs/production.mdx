@@ -1,0 +1,86 @@
+---
+title: Production and staging
+description: What the SWR devtools do in production builds, how to keep them on for staging, and when to install them as a regular dependency.
+---
+
+## Production builds
+
+`<SWRDevtools />` and `<SWRDevtoolsPanel />` render nothing when `process.env.NODE_ENV` is `production`. Your bundler (Vite, Next.js, webpack) replaces that check at build time, so a production build contains no devtools code. You don't need to wrap them in your own check.
+
+## Forcing it on (e.g. staging)
+
+Staging builds usually have `NODE_ENV=production` too. To keep the devtools there, import from `swr-devtools-react/production`, which skips the check. Gate the import behind your own build-time flag, so it stays out of the real production bundle:
+
+```tsx
+import { lazy, Suspense } from 'react';
+import { SWRDevtools } from 'swr-devtools-react';
+
+// The flag must be replaced at build time (here, Vite's `import.meta.env`), and
+// the `import()` must sit inside the check. Then a build with the flag off
+// drops the devtools.
+const SWRDevtoolsProduction =
+  import.meta.env.VITE_ENABLE_SWR_DEVTOOLS === 'true'
+    ? lazy(() =>
+        import('swr-devtools-react/production').then((module) => ({
+          default: module.SWRDevtools
+        }))
+      )
+    : null;
+
+export function Devtools() {
+  if (!SWRDevtoolsProduction) return <SWRDevtools />;
+  return (
+    <Suspense fallback={null}>
+      <SWRDevtoolsProduction />
+    </Suspense>
+  );
+}
+```
+
+Render `<Devtools />` inside your `<SWRConfig>`, where `<SWRDevtools />` would go. In Next.js, use a `NEXT_PUBLIC_` variable through `process.env` instead of `import.meta.env`.
+
+Two things keep the devtools in the bundle:
+
+- **A runtime flag**, such as a query param. It only controls whether the devtools load. The bundler can't know its value, so the devtools stay in the build.
+- **A `lazy()` call outside the check.** Bundlers keep it even when the flag is off. In a Vite build this put the whole panel in the main bundle.
+
+A static `import ... from 'swr-devtools-react/production'` also ships the devtools in every build that includes it.
+
+## Dev dependency or regular dependency
+
+[Getting started](/getting-started/) installs the package as a dev dependency, because production builds drop it. That's right for most apps, and always right for apps with no server of their own, such as a Vite app served as static files.
+
+Install it as a regular dependency instead in two cases.
+
+**You force it on for staging.** The staging build needs the package, so it has to be installed wherever that build runs.
+
+**A Next.js app on the Pages Router runs its server with only production dependencies.** This is common in Docker images, which often run `npm ci --omit=dev` before `next start`. The Pages Router doesn't bundle packages into its server build. It loads them from `node_modules` when it renders a page, so any page that imports `swr-devtools-react`, or every page if it's in `pages/_app.tsx`, fails with a 500:
+
+```text
+# Turbopack (the default in Next.js 16)
+Error: Failed to load external module swr-devtools-react-118512b5a736f68e: Error [ERR_MODULE_NOT_FOUND]
+
+# webpack
+Error: Cannot find package 'swr-devtools-react' imported from .next/server/pages/index.js
+```
+
+Pages that Next.js prerendered at build time still load, because the server sends the saved HTML. They fail too once they're rendered again, for example on revalidation.
+
+If you'd rather keep it a dev dependency, tell Next.js to bundle it into the server build:
+
+```ts
+// next.config.ts
+import type { NextConfig } from 'next';
+
+const config: NextConfig = {
+  transpilePackages: ['swr-devtools-react']
+};
+
+export default config;
+```
+
+`bundlePagesRouterDependencies: true` does the same for every package.
+
+The App Router isn't affected. It bundles the packages that server components and client components import, so the server never needs `node_modules/swr-devtools-react`.
+
+Either way, the browser gets the same production bundle. Installing the package as a regular dependency doesn't put any devtools code in it.

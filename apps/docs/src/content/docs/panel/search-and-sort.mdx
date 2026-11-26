@@ -1,0 +1,22 @@
+---
+title: Searching and sorting
+description: Filter and sort the keys in the SWR devtools panel.
+---
+
+## Search
+
+Type in **Filter keys** to show only the keys whose label contains the text. Case and surrounding spaces don't matter. The header shows how many keys match, such as "3 of 12 keys".
+
+The search looks at the label the list shows, so search for `/api/posts` to find `["/api/posts", 2]`.
+
+## Sort
+
+**Sort by** orders the list:
+
+| Option       | Order                                                                            |
+| ------------ | -------------------------------------------------------------------------------- |
+| Key          | A to Z, with numbers in order, so `/api/posts/2` comes before `/api/posts/10`.   |
+| Status       | Errors first, then Loading, Validating, Success and Idle.                        |
+| Last updated | The most recently updated key first: the last successful request or data change. |
+
+Ties fall back to key order. The list starts sorted by key, so rows stay still while keys revalidate.

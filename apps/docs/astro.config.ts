@@ -14,7 +14,20 @@ export default defineConfig({
           href: 'https://github.com/TheFlyer1983/swr-devtools-react'
         }
       ],
-      sidebar: [{ label: 'Guides', items: ['getting-started', 'demo'] }]
+      sidebar: [
+        { label: 'Start here', items: ['getting-started', 'nextjs', 'demo'] },
+        {
+          label: 'Using the panel',
+          items: [
+            'panel/inspecting-data',
+            'panel/search-and-sort',
+            'panel/editing',
+            'panel/revalidating-and-deleting'
+          ]
+        },
+        { label: 'Guides', items: ['production'] },
+        { label: 'Reference', items: ['api-reference', 'known-limits'] }
+      ]
     }),
     react()
   ]

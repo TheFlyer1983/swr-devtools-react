@@ -1,0 +1,49 @@
+---
+title: Inspecting data
+description: Read the SWR cache in the devtools panel, key by key.
+---
+
+Click the "SWR" button to open the panel, and Close in its header to hide it again. The panel remembers whether it was open, and its size, across reloads. Drag its edge to resize it, or focus the edge and use the arrow keys.
+
+## The key list
+
+The panel lists every key in the SWR cache and updates as the cache changes. The header counts the keys.
+
+Each row has the key, a status badge and the time since the key was last updated. Hover over the time to see the exact date.
+
+| Status     | Meaning                                                                       |
+| ---------- | ----------------------------------------------------------------------------- |
+| Loading    | A request is in flight, and the key has no data yet.                          |
+| Validating | A request is in flight, and the key still has its previous data.              |
+| Error      | The last request failed.                                                      |
+| Success    | The key has data.                                                             |
+| Idle       | No data, no error and no request, for example after `mutate(key, undefined)`. |
+
+A request in flight wins over an older error, so a key that failed and is retrying shows Loading, or Validating if it still has data from an earlier request.
+
+A key counts as updated when a request for it succeeds or its data changes. A refetch that returns the same data still resets the time, so a recent time doesn't mean the data is different. A failed request keeps the old time.
+
+SWR doesn't record any of this, so the panel times updates itself, from when `<SWRDevtools />` mounted. That's why it watches the cache even while closed.
+
+### Key labels
+
+SWR stores array and object keys as strings in its own format: `['/api/posts', 2]` becomes `@"/api/posts",2,`. The panel turns them back into something readable, `["/api/posts", 2]`. A key holding something the panel can't decode for certain, such as a regex or a Map, is shown in SWR's format.
+
+Keys written by `useSWRInfinite` are labelled Infinite, and keys written by `useSWRSubscription` are labelled Subscription.
+
+## Key details
+
+Click a key to see its details, and click it again or press ✕ to close them. Filtering the list keeps the details open. If the key is deleted, they close.
+
+The details show:
+
+- The key, with its status.
+- **Type**, for Infinite and Subscription keys.
+- **Cache key**, SWR's serialised form of the key, when it differs from the label. That's the string to pass to `mutate()`.
+- **Updated**, the date and time of the last successful request or data change.
+- **Error**, if the key has one. Errors show their name, message and any fields your fetcher added, such as `status` or `info`.
+- **Data**, as a collapsible JSON tree.
+
+The tree starts with only the top level open. Large arrays and objects are split into ranges, such as `[0 … 99]`, so opening a big payload stays fast. Dates, Maps, Sets, errors and class instances show what they are, not `{}`.
+
+From the details you can also [edit the data](/panel/editing/), [revalidate or delete the key](/panel/revalidating-and-deleting/).
