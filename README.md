@@ -11,13 +11,13 @@ In-app devtools for [SWR](https://swr.vercel.app): see every cache key, then rev
 
 ## Features
 
-- Every key in the SWR cache, with a status badge (loading, validating, success, error, idle) and the time since its data last changed. The list updates live.
+- Every key in the SWR cache, with a status badge (loading, validating, success, error, idle) and the time since it was last updated. The list updates live.
 - Array and object keys shown readably. `useSWRInfinite` and `useSWRSubscription` keys are labelled.
 - Search keys by text, and sort by key, status or last updated.
 - A detail view with the full key, any error, and the data as a collapsible JSON tree.
 - Revalidate, edit or delete a key, or clear the whole cache.
 - Renders inside a Shadow DOM, so your app's CSS can't break it and its CSS can't leak into your app.
-- Renders nothing in production builds, and the code is tree-shaken out.
+- Renders nothing in production builds, and its code is left out of the browser bundle.
 
 ## Install
 

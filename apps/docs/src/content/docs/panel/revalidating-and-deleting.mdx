@@ -7,7 +7,7 @@ Select a key to get its **Revalidate** and **Delete** buttons. **Clear all** is 
 
 ## Revalidate
 
-Revalidate refetches the key, the same as calling `mutate(key)`. The request goes through the hook that's using the key, with its fetcher, and the status changes to Validating while it runs.
+Revalidate refetches the key, the same as calling `mutate(key)`. The request goes through the hook that's using the key, with its fetcher, and the status changes to Validating while it runs, or Loading if the key has no data.
 
 It does nothing if no mounted hook uses the key, because there's no fetcher to call. It's disabled for Subscription keys, which have no fetcher.
 

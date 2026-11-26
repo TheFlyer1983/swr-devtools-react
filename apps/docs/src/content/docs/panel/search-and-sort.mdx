@@ -13,10 +13,10 @@ The search looks at the label the list shows, so search for `/api/posts` to find
 
 **Sort by** orders the list:
 
-| Option       | Order                                                                          |
-| ------------ | ------------------------------------------------------------------------------ |
-| Key          | A to Z, with numbers in order, so `/api/posts/2` comes before `/api/posts/10`. |
-| Status       | Errors first, then Loading, Validating, Success and Idle.                      |
-| Last updated | The most recently changed key first.                                           |
+| Option       | Order                                                                            |
+| ------------ | -------------------------------------------------------------------------------- |
+| Key          | A to Z, with numbers in order, so `/api/posts/2` comes before `/api/posts/10`.   |
+| Status       | Errors first, then Loading, Validating, Success and Idle.                        |
+| Last updated | The most recently updated key first: the last successful request or data change. |
 
 Ties fall back to key order. The list starts sorted by key, so rows stay still while keys revalidate.

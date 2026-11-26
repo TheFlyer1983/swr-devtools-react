@@ -9,19 +9,21 @@ Click the "SWR" button to open the panel, and Close in its header to hide it aga
 
 The panel lists every key in the SWR cache and updates as the cache changes. The header counts the keys.
 
-Each row has the key, a status badge and the time since the key's data last changed. Hover over the time to see the exact date.
+Each row has the key, a status badge and the time since the key was last updated. Hover over the time to see the exact date.
 
 | Status     | Meaning                                                                       |
 | ---------- | ----------------------------------------------------------------------------- |
-| Loading    | The first request is in flight. There's no data yet.                          |
-| Validating | A request is in flight, and the key still has its previous data or error.     |
+| Loading    | A request is in flight, and the key has no data yet.                          |
+| Validating | A request is in flight, and the key still has its previous data.              |
 | Error      | The last request failed.                                                      |
 | Success    | The key has data.                                                             |
 | Idle       | No data, no error and no request, for example after `mutate(key, undefined)`. |
 
-A request in flight wins over older data or errors, so a key that failed and is retrying shows Validating, not Error.
+A request in flight wins over an older error, so a key that failed and is retrying shows Loading, or Validating if it still has data from an earlier request.
 
-SWR doesn't record when data changed, so the panel times changes itself, from when `<SWRDevtools />` mounted. That's why it watches the cache even while closed.
+A key counts as updated when a request for it succeeds or its data changes. A refetch that returns the same data still resets the time, so a recent time doesn't mean the data is different. A failed request keeps the old time.
+
+SWR doesn't record any of this, so the panel times updates itself, from when `<SWRDevtools />` mounted. That's why it watches the cache even while closed.
 
 ### Key labels
 
@@ -38,7 +40,7 @@ The details show:
 - The key, with its status.
 - **Type**, for Infinite and Subscription keys.
 - **Cache key**, SWR's serialised form of the key, when it differs from the label. That's the string to pass to `mutate()`.
-- **Updated**, the date and time the data last changed.
+- **Updated**, the date and time of the last successful request or data change.
 - **Error**, if the key has one. Errors show their name, message and any fields your fetcher added, such as `status` or `info`.
 - **Data**, as a collapsible JSON tree.
 
