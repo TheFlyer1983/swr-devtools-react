@@ -7,15 +7,17 @@ import {
   type ReactElement
 } from 'react';
 import { Panel, useCacheView } from './panel.tsx';
-import { ShadowHost, type Theme } from './shadow-host.tsx';
+import { ShadowHost } from './shadow-host.tsx';
 import {
   DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
   loadPanelState,
   savePanelState,
   type PanelPosition,
-  type PanelState
+  type PanelState,
+  type Theme
 } from './storage.ts';
+import { ThemeScope, useThemeChoice } from './theme.tsx';
 
 /** Which corner of the viewport the toggle button sits in. */
 export type ButtonPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -27,7 +29,11 @@ export interface SWRDevtoolsProps {
   buttonPosition?: ButtonPosition;
   /** Where the panel docks. Defaults to `bottom`. */
   position?: PanelPosition;
-  /** Light or dark colours. Defaults to `system`, which follows the OS or browser setting. */
+  /**
+   * Light or dark colours, for a host app that manages the theme itself. When
+   * it's set, the panel hides its own theme picker. Without it, the user
+   * picks, starting from `system`, which follows the OS or browser setting.
+   */
   theme?: Theme;
 }
 
@@ -51,8 +57,13 @@ export function SWRDevtools({
   theme
 }: SWRDevtoolsProps): ReactElement | null {
   return (
-    <ShadowHost theme={theme}>
-      <Floating initialIsOpen={initialIsOpen} buttonPosition={buttonPosition} position={position} />
+    <ShadowHost>
+      <Floating
+        initialIsOpen={initialIsOpen}
+        buttonPosition={buttonPosition}
+        position={position}
+        theme={theme}
+      />
     </ShadowHost>
   );
 }
@@ -61,9 +72,16 @@ interface FloatingProps {
   initialIsOpen: boolean;
   buttonPosition: ButtonPosition;
   position: PanelPosition;
+  theme: Theme | undefined;
 }
 
-function Floating({ initialIsOpen, buttonPosition, position }: FloatingProps): ReactElement {
+function Floating({
+  initialIsOpen,
+  buttonPosition,
+  position,
+  ...props
+}: FloatingProps): ReactElement {
+  const { theme, onThemeChange } = useThemeChoice(props.theme);
   // Watched here, not in the panel, so ages are right whenever it opens.
   const view = useCacheView();
   // Safe to read storage here: ShadowHost only renders this on the client,
@@ -94,16 +112,18 @@ function Floating({ initialIsOpen, buttonPosition, position }: FloatingProps): R
 
   if (!state.isOpen) {
     return (
-      <button
-        ref={toggle}
-        type="button"
-        className="toggle"
-        data-position={buttonPosition}
-        aria-label="Open SWR Devtools"
-        onClick={() => update({ isOpen: true })}
-      >
-        SWR
-      </button>
+      <ThemeScope theme={theme}>
+        <button
+          ref={toggle}
+          type="button"
+          className="toggle"
+          data-position={buttonPosition}
+          aria-label="Open SWR Devtools"
+          onClick={() => update({ isOpen: true })}
+        >
+          SWR
+        </button>
+      </ThemeScope>
     );
   }
 
@@ -113,21 +133,25 @@ function Floating({ initialIsOpen, buttonPosition, position }: FloatingProps): R
     update(isBottom ? { height: clampSize(next, true) } : { width: clampSize(next, false) });
 
   return (
-    <aside
-      className="panel"
-      data-position={position}
-      aria-label="SWR Devtools"
-      style={isBottom ? { height: size } : { width: size }}
-    >
-      <ResizeHandle isBottom={isBottom} size={size} onResize={resize} />
-      <Panel
-        view={view}
-        onClose={() => {
-          focusToggle.current = true;
-          update({ isOpen: false });
-        }}
-      />
-    </aside>
+    <ThemeScope theme={theme}>
+      <aside
+        className="panel"
+        data-position={position}
+        aria-label="SWR Devtools"
+        style={isBottom ? { height: size } : { width: size }}
+      >
+        <ResizeHandle isBottom={isBottom} size={size} onResize={resize} />
+        <Panel
+          view={view}
+          theme={theme}
+          onThemeChange={onThemeChange}
+          onClose={() => {
+            focusToggle.current = true;
+            update({ isOpen: false });
+          }}
+        />
+      </aside>
+    </ThemeScope>
   );
 }
 

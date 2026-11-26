@@ -6,9 +6,9 @@
  * Design tokens are CSS variables prefixed `--swr-dt-`. Components use the
  * tokens, never raw values, so a later move to Tailwind maps them across.
  *
- * Colour tokens hold a light and a dark value in \`light-dark()\`. The host's
- * \`color-scheme\` picks one: both (the system setting) by default, or the one
- * the \`theme\` prop names, through \`data-theme\`.
+ * Colour tokens hold a light and a dark value in \`light-dark()\`, which
+ * resolves where a token is used. The \`.theme\` wrapper's \`color-scheme\`
+ * picks one: the system setting for \`system\`, or the theme it names.
  */
 export const styles = `
 :host {
@@ -18,8 +18,6 @@ export const styles = `
   /* \`all\` leaves these two out, so an RTL host page would flip the panel. */
   direction: ltr !important;
   unicode-bidi: isolate !important;
-  /* \`all\` resets this too, so it needs !important to apply at all. */
-  color-scheme: light dark !important;
 
   /* Colours */
   --swr-dt-color-bg: light-dark(#ffffff, #111113);
@@ -60,12 +58,18 @@ export const styles = `
   --swr-dt-shadow: 0 4px 16px light-dark(rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.5));
 }
 
-:host([data-theme='light']) {
-  color-scheme: light !important;
+/* Wraps everything in the shadow root, without a box of its own. */
+.theme {
+  display: contents;
+  color-scheme: light dark;
 }
 
-:host([data-theme='dark']) {
-  color-scheme: dark !important;
+.theme[data-theme='light'] {
+  color-scheme: light;
+}
+
+.theme[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 /* <SWRDevtoolsPanel /> fills the element the app renders it in. */

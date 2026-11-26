@@ -3,8 +3,7 @@ import * as devtools from './production.ts';
 
 export type { ButtonPosition, SWRDevtoolsProps } from './swr-devtools.tsx';
 export type { SWRDevtoolsPanelProps } from './swr-devtools-panel.tsx';
-export type { Theme } from './shadow-host.tsx';
-export type { PanelPosition } from './storage.ts';
+export type { PanelPosition, Theme } from './storage.ts';
 
 // Bundlers replace `process.env.NODE_ENV` at build time, so in a production
 // build the real components become unreachable and are tree-shaken out. Import

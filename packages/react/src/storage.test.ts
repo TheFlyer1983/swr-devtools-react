@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { loadPanelState, STORAGE_KEY, type PanelState } from './storage.ts';
+import {
+  loadPanelState,
+  loadTheme,
+  saveTheme,
+  STORAGE_KEY,
+  THEME_STORAGE_KEY,
+  type PanelState
+} from './storage.ts';
 
 const fallback: PanelState = { isOpen: false, height: 320, width: 480 };
 
@@ -39,5 +46,22 @@ describe('loadPanelState', () => {
       height: 320,
       width: 600
     });
+  });
+});
+
+describe('loadTheme', () => {
+  it('uses the system theme when nothing is saved', () => {
+    expect(loadTheme()).toBe('system');
+  });
+
+  it('reads back a saved theme', () => {
+    saveTheme('dark');
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+    expect(loadTheme()).toBe('dark');
+  });
+
+  it('uses the system theme for an unknown value', () => {
+    localStorage.setItem(THEME_STORAGE_KEY, 'sepia');
+    expect(loadTheme()).toBe('system');
   });
 });

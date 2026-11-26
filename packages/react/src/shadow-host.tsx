@@ -2,9 +2,6 @@ import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } 
 import { createPortal } from 'react-dom';
 import { styles } from './styles.ts';
 
-/** The panel's colours: following the system setting, or always light or dark. */
-export type Theme = 'system' | 'light' | 'dark';
-
 export interface ShadowHostProps {
   children: ReactNode;
   /**
@@ -13,8 +10,6 @@ export interface ShadowHostProps {
    * places itself.
    */
   inline?: boolean;
-  /** Defaults to `system`. */
-  theme?: Theme;
 }
 
 /**
@@ -29,11 +24,7 @@ export interface ShadowHostProps {
  * Renders nothing on the server, and nothing inside the host until the shadow
  * root exists.
  */
-export function ShadowHost({
-  children,
-  inline = false,
-  theme = 'system'
-}: ShadowHostProps): ReactElement | null {
+export function ShadowHost({ children, inline = false }: ShadowHostProps): ReactElement | null {
   const [root, setRoot] = useState<ShadowRoot | null>(null);
   const inlineHost = useRef<HTMLDivElement>(null);
 
@@ -58,11 +49,6 @@ export function ShadowHost({
       setRoot(null);
     };
   }, []);
-
-  // Separate from the effect above, so a new theme doesn't recreate the host.
-  useLayoutEffect(() => {
-    root?.host.setAttribute('data-theme', theme);
-  }, [root, theme]);
 
   const content =
     root &&

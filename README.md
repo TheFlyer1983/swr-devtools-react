@@ -17,7 +17,7 @@ The full docs, with a live demo, are at [swr-devtools-react.theflyer1983.dev](ht
 - A detail view with the full key, any error, and the data as a collapsible JSON tree.
 - Revalidate, edit or delete a key, or clear the whole cache.
 - Renders inside a Shadow DOM, so your app's CSS can't break it and its CSS can't leak into your app.
-- Light and dark themes. It follows the system setting unless you choose one.
+- Light and dark themes. It follows the system setting until you pick one in the panel.
 - Renders nothing in production builds, and its code is left out of the browser bundle.
 
 ## Install
@@ -63,7 +63,7 @@ The panel shows the cache of the nearest `<SWRConfig>`. If your app has no `<SWR
 | `initialIsOpen`  | `boolean`                                                            | `false`          | Start with the panel open. Once the user opens or closes the panel, their choice is saved in `localStorage` and wins over this prop. |
 | `buttonPosition` | `'top-left'` \| `'top-right'` \| `'bottom-left'` \| `'bottom-right'` | `'bottom-right'` | Which corner of the viewport the toggle button sits in.                                                                              |
 | `position`       | `'bottom'` \| `'right'`                                              | `'bottom'`       | Where the panel docks.                                                                                                               |
-| `theme`          | `'system'` \| `'light'` \| `'dark'`                                  | `'system'`       | Light or dark colours. `'system'` follows the OS or browser setting, and changes with it.                                            |
+| `theme`          | `'system'` \| `'light'` \| `'dark'`                                  | none             | Sets the theme from your app and hides the panel's theme picker. See [Theme](#theme).                                                |
 
 Drag the panel's edge to resize it, or focus the edge and use the arrow keys. The size is saved in `localStorage` too.
 
@@ -82,6 +82,16 @@ import { SWRDevtoolsPanel } from 'swr-devtools-react';
     <SWRDevtoolsPanel />
   </div>
 </SWRConfig>;
+```
+
+### Theme
+
+The panel follows your OS or browser's light or dark setting. A picker in its header switches between System, Light and Dark, and the choice is saved in `localStorage`.
+
+If your app or devtools host already has a theme setting, pass `theme` to use it instead. The panel then hides its picker, so the two settings can't disagree:
+
+```tsx
+<SWRDevtoolsPanel theme={isDark ? 'dark' : 'light'} />
 ```
 
 ## Next.js

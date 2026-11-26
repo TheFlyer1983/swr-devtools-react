@@ -69,39 +69,13 @@ describe('<ShadowHost />', () => {
     expect(css).not.toMatch(/\.panel-content \{[^}]*color-scheme/);
   });
 
-  it('follows the system theme by default, and the theme prop when given', () => {
-    const { rerender } = render(<ShadowHost>{null}</ShadowHost>);
+  it('sets the colour scheme from the theme wrapper, without giving it a box', () => {
+    render(<ShadowHost>{null}</ShadowHost>);
+
     const css = host()?.shadowRoot?.querySelector('style')?.textContent ?? '';
-    expect(host()).toHaveAttribute('data-theme', 'system');
-    expect(css).toMatch(/:host \{[^}]*color-scheme: light dark !important/);
-
-    rerender(<ShadowHost theme="dark">{null}</ShadowHost>);
-    expect(host()).toHaveAttribute('data-theme', 'dark');
-    expect(css).toMatch(/:host\(\[data-theme='dark'\]\) \{\s*color-scheme: dark !important/);
-
-    rerender(<ShadowHost theme="light">{null}</ShadowHost>);
-    expect(host()).toHaveAttribute('data-theme', 'light');
-    expect(css).toMatch(/:host\(\[data-theme='light'\]\) \{\s*color-scheme: light !important/);
-  });
-
-  it('sets the theme on an inline host too', () => {
-    render(
-      <ShadowHost inline theme="dark">
-        {null}
-      </ShadowHost>
-    );
-
-    expect(host()).toHaveAttribute('data-inline');
-    expect(host()).toHaveAttribute('data-theme', 'dark');
-  });
-
-  it('keeps the same host when the theme changes', () => {
-    const { rerender } = render(<ShadowHost theme="light">{null}</ShadowHost>);
-    const first = host();
-
-    rerender(<ShadowHost theme="dark">{null}</ShadowHost>);
-
-    expect(host()).toBe(first);
+    expect(css).toMatch(/\.theme \{[^}]*display: contents;[^}]*color-scheme: light dark;/);
+    expect(css).toMatch(/\.theme\[data-theme='light'\] \{\s*color-scheme: light;/);
+    expect(css).toMatch(/\.theme\[data-theme='dark'\] \{\s*color-scheme: dark;/);
   });
 
   it('removes the host when it unmounts', () => {

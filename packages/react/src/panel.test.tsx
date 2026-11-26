@@ -841,22 +841,28 @@ describe('<SWRDevtoolsPanel />', () => {
     expect(panel().queryByRole('button', { name: /open|close/i })).not.toBeInTheDocument();
   });
 
-  it('follows the system theme unless the theme prop says otherwise', () => {
+  it('has a theme picker, which a theme prop replaces', () => {
     const cache: Cache = new Map();
-    const { container, rerender } = render(
+    const { rerender } = render(
       <Wrapper cache={cache}>
         <SWRDevtoolsPanel />
       </Wrapper>
     );
-    const host = container.querySelector('[data-swr-devtools]');
-    expect(host).toHaveAttribute('data-theme', 'system');
+    const scope = () => panel().getByRole('banner').closest('.theme');
+    expect(scope()).toHaveAttribute('data-theme', 'system');
+
+    fireEvent.change(panel().getByRole('combobox', { name: 'Theme' }), {
+      target: { value: 'light' }
+    });
+    expect(scope()).toHaveAttribute('data-theme', 'light');
 
     rerender(
       <Wrapper cache={cache}>
-        <SWRDevtoolsPanel theme="light" />
+        <SWRDevtoolsPanel theme="dark" />
       </Wrapper>
     );
-
-    expect(host).toHaveAttribute('data-theme', 'light');
+    expect(scope()).toHaveAttribute('data-theme', 'dark');
+    expect(panel().queryByRole('combobox', { name: 'Theme' })).not.toBeInTheDocument();
+    localStorage.clear();
   });
 });

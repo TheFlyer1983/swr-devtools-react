@@ -125,7 +125,7 @@ import { SWRDevtools } from 'swr-devtools-react';
 - TanStack Devtools plugin (`packages/tanstack`)
 - Observer count per key (via middleware)
 - Trigger loading / trigger error states (needs a spike to confirm hooks re-render correctly)
-- Light/dark theme following system preference, with a `theme` prop to override it
+- Light/dark theme following system preference, with a picker in the panel. A `theme` prop lets a host such as TanStack Devtools set it instead, which hides the picker.
 
 **v0.3+**
 

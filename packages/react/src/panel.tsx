@@ -20,6 +20,7 @@ import {
 import { useSWRConfig } from 'swr';
 import { KeyDetail } from './key-detail.tsx';
 import { KeyList } from './key-list.tsx';
+import { THEMES, type Theme } from './storage.ts';
 
 /** The live cache, and the actions on it, as the panel shows them. */
 export interface CacheView {
@@ -53,6 +54,9 @@ export interface PanelProps {
   view: CacheView;
   /** Shows a close button in the header. The floating panel passes it. */
   onClose?: () => void;
+  theme?: Theme;
+  /** Shows a theme picker in the header. Left out when the host app sets the theme. */
+  onThemeChange?: (theme: Theme) => void;
 }
 
 const SORT_OPTIONS: { value: SortBy; name: string }[] = [
@@ -61,11 +65,18 @@ const SORT_OPTIONS: { value: SortBy; name: string }[] = [
   { value: 'updated', name: 'Last updated' }
 ];
 
+const THEME_NAMES: Record<Theme, string> = { system: 'System', light: 'Light', dark: 'Dark' };
+
 /**
  * The panel's content: a header, a filter and sort bar, the key list and,
  * once a key is selected, its details.
  */
-export function Panel({ view, onClose }: PanelProps): ReactElement {
+export function Panel({
+  view,
+  onClose,
+  theme = 'system',
+  onThemeChange
+}: PanelProps): ReactElement {
   const { entries, mode, actions } = view;
   // Sorting by key by default keeps rows still while keys revalidate.
   const [sortBy, setSortBy] = useState<SortBy>('key');
@@ -90,6 +101,22 @@ export function Panel({ view, onClose }: PanelProps): ReactElement {
           {isFiltered ? `${visible.length} of ${entries.length}` : entries.length} keys ({mode})
         </span>
         <span className="header-actions">
+          {onThemeChange && (
+            <select
+              aria-label="Theme"
+              value={theme}
+              onChange={(event) => {
+                const next = THEMES.find((option) => option === event.target.value);
+                if (next) onThemeChange(next);
+              }}
+            >
+              {THEMES.map((option) => (
+                <option key={option} value={option}>
+                  {THEME_NAMES[option]}
+                </option>
+              ))}
+            </select>
+          )}
           <ClearAll onConfirm={() => void actions.clearAll()} />
           {onClose && (
             <button type="button" aria-label="Close SWR Devtools" onClick={onClose}>
