@@ -1,5 +1,5 @@
 // Packs swr-devtools-react into .pack/swr-devtools-react.tgz with the root
-// README, which is the npm page. packages/react/README.md is a short pointer
+// README, which has the full docs. packages/react/README.md is a short pointer
 // for people browsing the repo, so it's swapped out while packing and always
 // restored, even when packing fails.
 
