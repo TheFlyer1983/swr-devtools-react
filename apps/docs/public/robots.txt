@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://swr-devtools-react.theflyer1983.dev/sitemap-index.xml
