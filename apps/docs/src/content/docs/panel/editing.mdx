@@ -3,7 +3,13 @@ title: Editing data
 description: Change a key's cached data from the SWR devtools panel.
 ---
 
+import { EditingDemo } from '../../../components/demo/PanelDemos.tsx';
+
 Select a key, then press **Edit** in its details. The data tree becomes a text box with the data as JSON.
+
+Try it in the demo below: select `/api/todos/1`, change `completed` or `title`, and apply. The todo above the panel updates straight away.
+
+<EditingDemo client:only="react" />
 
 Change the JSON, then press **Apply** or Ctrl+Enter (⌘+Enter on a Mac). The panel writes the new data to the cache with `mutate(key, data, { revalidate: false })`, so every hook using the key re-renders with it, and SWR doesn't refetch straight away. The next revalidation, such as a focus or an interval, replaces it with fresh data from your fetcher.
 

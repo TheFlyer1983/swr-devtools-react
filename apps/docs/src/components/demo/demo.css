@@ -77,6 +77,14 @@
   color: var(--sl-color-red);
 }
 
+.swr-demo__status--idle {
+  color: var(--sl-color-gray-3);
+}
+
+.swr-demo__data {
+  grid-column: 1 / -1;
+}
+
 /* <SWRDevtoolsPanel /> fills its container, so the container sets the size. */
 .swr-demo__panel {
   height: 26rem;

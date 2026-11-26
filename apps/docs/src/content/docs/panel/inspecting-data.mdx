@@ -3,7 +3,13 @@ title: Inspecting data
 description: Read the SWR cache in the devtools panel, key by key.
 ---
 
+import { InspectingDataDemo } from '../../../components/demo/PanelDemos.tsx';
+
 Click the "SWR" button to open the panel, and Close in its header to hide it again. The panel remembers whether it was open, and its size, across reloads. Drag its edge to resize it, or focus the edge and use the arrow keys.
+
+The demo below runs in your browser against a mock API, with the panel shown inline. Select `/api/users/1` to browse a large nested object, and `/api/error` to see an error. Revalidate `/api/slow` to watch it go to Validating for two seconds.
+
+<InspectingDataDemo client:only="react" />
 
 ## The key list
 
