@@ -5,6 +5,10 @@
  *
  * Design tokens are CSS variables prefixed `--swr-dt-`. Components use the
  * tokens, never raw values, so a later move to Tailwind maps them across.
+ *
+ * Colour tokens hold a light and a dark value in \`light-dark()\`. The host's
+ * \`color-scheme\` picks one: both (the system setting) by default, or the one
+ * the \`theme\` prop names, through \`data-theme\`.
  */
 export const styles = `
 :host {
@@ -14,22 +18,24 @@ export const styles = `
   /* \`all\` leaves these two out, so an RTL host page would flip the panel. */
   direction: ltr !important;
   unicode-bidi: isolate !important;
+  /* \`all\` resets this too, so it needs !important to apply at all. */
+  color-scheme: light dark !important;
 
   /* Colours */
-  --swr-dt-color-bg: #ffffff;
-  --swr-dt-color-surface: #f6f7f9;
-  --swr-dt-color-text: #1c2024;
-  --swr-dt-color-muted: #60646c;
-  --swr-dt-color-border: #e0e1e6;
-  --swr-dt-color-accent: #0969da;
-  --swr-dt-color-accent-text: #ffffff;
+  --swr-dt-color-bg: light-dark(#ffffff, #111113);
+  --swr-dt-color-surface: light-dark(#f6f7f9, #1c1d20);
+  --swr-dt-color-text: light-dark(#1c2024, #edeef0);
+  --swr-dt-color-muted: light-dark(#60646c, #b0b4ba);
+  --swr-dt-color-border: light-dark(#e0e1e6, #363a3f);
+  --swr-dt-color-accent: light-dark(#0969da, #4493f8);
+  --swr-dt-color-accent-text: light-dark(#ffffff, #0d1117);
 
   /* Status colours, designed for SWR's states */
-  --swr-dt-color-loading: #9a6700;
-  --swr-dt-color-validating: #0969da;
-  --swr-dt-color-success: #1f883d;
-  --swr-dt-color-error: #d1242f;
-  --swr-dt-color-idle: #60646c;
+  --swr-dt-color-loading: light-dark(#9a6700, #d29922);
+  --swr-dt-color-validating: light-dark(#0969da, #4493f8);
+  --swr-dt-color-success: light-dark(#1f883d, #3fb950);
+  --swr-dt-color-error: light-dark(#d1242f, #f85149);
+  --swr-dt-color-idle: light-dark(#60646c, #b0b4ba);
 
   /* Spacing */
   --swr-dt-space-1: 4px;
@@ -51,7 +57,15 @@ export const styles = `
 
   /* Layering and elevation */
   --swr-dt-z-index: 99999;
-  --swr-dt-shadow: 0 4px 16px rgb(0 0 0 / 0.16);
+  --swr-dt-shadow: 0 4px 16px light-dark(rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.5));
+}
+
+:host([data-theme='light']) {
+  color-scheme: light !important;
+}
+
+:host([data-theme='dark']) {
+  color-scheme: dark !important;
 }
 
 /* <SWRDevtoolsPanel /> fills the element the app renders it in. */
@@ -160,7 +174,6 @@ export const styles = `
   min-width: 0;
   min-height: 0;
   height: 100%;
-  color-scheme: light;
   font-family: var(--swr-dt-font-sans);
   font-size: var(--swr-dt-font-size-md);
   line-height: var(--swr-dt-line-height);

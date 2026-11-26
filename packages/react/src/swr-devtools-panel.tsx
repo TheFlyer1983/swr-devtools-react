@@ -1,6 +1,11 @@
 import type { ReactElement } from 'react';
 import { Panel, useCacheView } from './panel.tsx';
-import { ShadowHost } from './shadow-host.tsx';
+import { ShadowHost, type Theme } from './shadow-host.tsx';
+
+export interface SWRDevtoolsPanelProps {
+  /** Light or dark colours. Defaults to `system`, which follows the OS or browser setting. */
+  theme?: Theme;
+}
 
 /**
  * The devtools panel on its own, with no floating button. It fills the
@@ -9,9 +14,9 @@ import { ShadowHost } from './shadow-host.tsx';
  *
  * For embedding in your own layout or another devtools host.
  */
-export function SWRDevtoolsPanel(): ReactElement | null {
+export function SWRDevtoolsPanel({ theme }: SWRDevtoolsPanelProps = {}): ReactElement | null {
   return (
-    <ShadowHost inline>
+    <ShadowHost inline theme={theme}>
       <InlinePanel />
     </ShadowHost>
   );

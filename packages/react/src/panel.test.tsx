@@ -840,4 +840,23 @@ describe('<SWRDevtoolsPanel />', () => {
     expect(container.querySelector('[data-swr-devtools]')).not.toBeNull();
     expect(panel().queryByRole('button', { name: /open|close/i })).not.toBeInTheDocument();
   });
+
+  it('follows the system theme unless the theme prop says otherwise', () => {
+    const cache: Cache = new Map();
+    const { container, rerender } = render(
+      <Wrapper cache={cache}>
+        <SWRDevtoolsPanel />
+      </Wrapper>
+    );
+    const host = container.querySelector('[data-swr-devtools]');
+    expect(host).toHaveAttribute('data-theme', 'system');
+
+    rerender(
+      <Wrapper cache={cache}>
+        <SWRDevtoolsPanel theme="light" />
+      </Wrapper>
+    );
+
+    expect(host).toHaveAttribute('data-theme', 'light');
+  });
 });

@@ -51,6 +51,16 @@ describe('<SWRDevtools />', () => {
     expect(find('.panel')).toBeNull();
   });
 
+  it('follows the system theme unless the theme prop says otherwise', () => {
+    const { rerender } = render(<SWRDevtools />);
+    const host = document.querySelector('[data-swr-devtools]');
+    expect(host).toHaveAttribute('data-theme', 'system');
+
+    rerender(<SWRDevtools theme="dark" />);
+
+    expect(host).toHaveAttribute('data-theme', 'dark');
+  });
+
   it('opens a panel docked at the bottom, and closes it again', () => {
     renderDevtools();
 

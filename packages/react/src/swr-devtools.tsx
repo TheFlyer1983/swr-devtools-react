@@ -7,7 +7,7 @@ import {
   type ReactElement
 } from 'react';
 import { Panel, useCacheView } from './panel.tsx';
-import { ShadowHost } from './shadow-host.tsx';
+import { ShadowHost, type Theme } from './shadow-host.tsx';
 import {
   DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
@@ -27,6 +27,8 @@ export interface SWRDevtoolsProps {
   buttonPosition?: ButtonPosition;
   /** Where the panel docks. Defaults to `bottom`. */
   position?: PanelPosition;
+  /** Light or dark colours. Defaults to `system`, which follows the OS or browser setting. */
+  theme?: Theme;
 }
 
 /** Smallest panel size, in pixels. */
@@ -45,10 +47,11 @@ const KEY_STEP = 16;
 export function SWRDevtools({
   initialIsOpen = false,
   buttonPosition = 'bottom-right',
-  position = 'bottom'
+  position = 'bottom',
+  theme
 }: SWRDevtoolsProps): ReactElement | null {
   return (
-    <ShadowHost>
+    <ShadowHost theme={theme}>
       <Floating initialIsOpen={initialIsOpen} buttonPosition={buttonPosition} position={position} />
     </ShadowHost>
   );
