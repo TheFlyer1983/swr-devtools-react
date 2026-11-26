@@ -62,4 +62,4 @@ Notes for the implementation (#8):
 
 - **#12 / spec 6.2:** "keys disappear as the playground unmounts" is wrong for SWR. Keys stay. The done-when criterion is updated in the spec.
 - **#9:** Delete must notify mounted hooks. `cache.delete` alone doesn't.
-- **#21:** observer counts and "unmounted" markers need D (middleware, needs user setup) or SWR internals (`EVENT_REVALIDATORS`). Decide there.
+- **#21:** observer counts and "unmounted" markers need D (middleware, needs user setup) or SWR internals (`EVENT_REVALIDATORS`). Decided in #21: SWR internals, so no setup is needed (see the spec, §4).

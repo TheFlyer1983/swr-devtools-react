@@ -15,7 +15,7 @@ import {
   type Ref
 } from 'react';
 import { JsonTree } from './json-tree.tsx';
-import { KIND_NAMES, StatusBadge } from './key-list.tsx';
+import { KIND_NAMES, StatusBadge, UNUSED_NOTE } from './key-list.tsx';
 
 export interface KeyDetailProps {
   entry: CacheEntry;
@@ -26,10 +26,16 @@ export interface KeyDetailProps {
 /**
  * Why Revalidate can't refetch a key, if it can't. `mutate(key)` refetches
  * through the key's mounted hook, and a subscription's hook has no fetcher.
+ * This also covers `useSWRInfinite`'s page keys: only its `$inf$` key has a
+ * hook.
  */
-const REVALIDATE_UNAVAILABLE: Partial<Record<CacheEntry['kind'], string>> = {
-  subscription: 'Subscription keys have no fetcher, so they can’t be revalidated.'
-};
+function revalidateUnavailable({ kind, hooks }: CacheEntry): string | undefined {
+  if (kind === 'subscription') {
+    return 'Subscription keys have no fetcher, so they can’t be revalidated.';
+  }
+  if (hooks === 0) return 'No mounted hook uses this key, so there’s no fetcher to call.';
+  return undefined;
+}
 
 /** One key in full: its key, status, error (if any) and data, with actions. */
 export function KeyDetail({ entry, actions, onClose }: KeyDetailProps): ReactElement {
@@ -75,6 +81,12 @@ export function KeyDetail({ entry, actions, onClose }: KeyDetailProps): ReactEle
             <dd className="detail-raw-key">{entry.key}</dd>
           </>
         )}
+        {entry.hooks !== undefined && (
+          <>
+            <dt>Hooks</dt>
+            <dd>{entry.hooks === 0 ? `None mounted. ${UNUSED_NOTE}` : `${entry.hooks} mounted`}</dd>
+          </>
+        )}
         <dt>Updated</dt>
         <dd>
           <time dateTime={new Date(entry.updatedAt).toISOString()}>
@@ -84,7 +96,7 @@ export function KeyDetail({ entry, actions, onClose }: KeyDetailProps): ReactEle
       </dl>
       <div className="detail-actions">
         <ActionButton
-          reason={REVALIDATE_UNAVAILABLE[entry.kind]}
+          reason={revalidateUnavailable(entry)}
           onClick={() => void actions.revalidate(entry.key)}
         >
           Revalidate
