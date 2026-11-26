@@ -1,4 +1,5 @@
 import type { Cache } from 'swr';
+import { SWRGlobalState } from 'swr/_internal';
 import { describe, expect, it, vi } from 'vitest';
 import { createCacheStore } from './cache-store.ts';
 
@@ -51,6 +52,29 @@ describe('createCacheStore', () => {
     expect(polled.getMode()).toBe('poll');
     a();
     b();
+  });
+
+  it('notices a hook unmounting, which writes nothing to the cache', () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const cache: Cache = new Map([['/api/user', { data: 1 }]]);
+    const userHooks = [() => {}];
+    // @ts-expect-error -- only the first item of SWR's state tuple matters here.
+    SWRGlobalState.set(cache, [{ '/api/user': userHooks }]);
+    const store = createCacheStore(cache);
+    const onChange = vi.fn<() => void>();
+    const unsubscribe = store.subscribe(onChange);
+    expect(store.getSnapshot()[0]?.hooks).toBe(1);
+
+    vi.advanceTimersByTime(1000);
+    expect(onChange).not.toHaveBeenCalled();
+
+    userHooks.pop();
+    vi.advanceTimersByTime(1000);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot()[0]?.hooks).toBe(0);
+    unsubscribe();
+    vi.useRealTimers();
   });
 
   it('leaves the cache unpatched once every subscriber has gone', () => {
