@@ -25,6 +25,13 @@ describe('readHookCounts', () => {
     );
   });
 
+  it('reads a registry with no prototype, the way SWR creates it', () => {
+    const empty: object = Object.create(null);
+    const revalidators = Object.assign(empty, { '/api/user': [noop] });
+
+    expect(readHookCounts(withRevalidators(revalidators))).toEqual(new Map([['/api/user', 1]]));
+  });
+
   it('leaves out keys whose hooks have all unmounted', () => {
     const cache = withRevalidators({ '/api/user': [] });
 
@@ -38,5 +45,7 @@ describe('readHookCounts', () => {
   it("is unknown when SWR's state isn't the shape it expects", () => {
     expect(readHookCounts(withRevalidators(undefined))).toBeUndefined();
     expect(readHookCounts(withRevalidators({ '/api/user': 1 }))).toBeUndefined();
+    // Would enumerate as empty, marking every key unused.
+    expect(readHookCounts(withRevalidators(new Map([['/api/user', [noop]]])))).toBeUndefined();
   });
 });

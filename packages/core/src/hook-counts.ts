@@ -16,7 +16,7 @@ export function readHookCounts(cache: Cache): Map<string, number> | undefined {
   const state: unknown = SWRGlobalState.get(cache);
   if (!Array.isArray(state)) return undefined;
   const revalidators: unknown = state[0];
-  if (typeof revalidators !== 'object' || revalidators === null) return undefined;
+  if (!isPlainRecord(revalidators)) return undefined;
 
   const counts = new Map<string, number>();
   for (const [key, callbacks] of Object.entries(revalidators)) {
@@ -24,4 +24,14 @@ export function readHookCounts(cache: Cache): Map<string, number> | undefined {
     if (callbacks.length > 0) counts.set(key, callbacks.length);
   }
   return counts;
+}
+
+/**
+ * SWR's registry is `Object.create(null)`. A Map or other container would
+ * enumerate as empty and mark every key unused, so it doesn't count.
+ */
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) return false;
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return prototype === null || prototype === Object.prototype;
 }
