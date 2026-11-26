@@ -5,6 +5,8 @@
 
 In-app devtools for [SWR](https://swr.vercel.app): see every cache key, then revalidate, edit or delete it from a floating panel. Inspired by TanStack Query Devtools.
 
+The full docs, with a live demo, are at [swr-devtools-react.theflyer1983.dev](https://swr-devtools-react.theflyer1983.dev).
+
 ![The devtools panel docked at the bottom of the Vite playground, with a key selected and its data shown as a JSON tree](https://raw.githubusercontent.com/TheFlyer1983/swr-devtools-react/main/docs/images/panel.png)
 
 ## Features
