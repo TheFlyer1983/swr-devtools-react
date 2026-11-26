@@ -17,6 +17,7 @@ The full docs, with a live demo, are at [swr-devtools-react.theflyer1983.dev](ht
 - A detail view with the full key, any error, and the data as a collapsible JSON tree.
 - Revalidate, edit or delete a key, or clear the whole cache.
 - Renders inside a Shadow DOM, so your app's CSS can't break it and its CSS can't leak into your app.
+- Light and dark themes. It follows the system setting until you pick one in the panel.
 - Renders nothing in production builds, and its code is left out of the browser bundle.
 
 ## Install
@@ -62,14 +63,15 @@ The panel shows the cache of the nearest `<SWRConfig>`. If your app has no `<SWR
 | `initialIsOpen`  | `boolean`                                                            | `false`          | Start with the panel open. Once the user opens or closes the panel, their choice is saved in `localStorage` and wins over this prop. |
 | `buttonPosition` | `'top-left'` \| `'top-right'` \| `'bottom-left'` \| `'bottom-right'` | `'bottom-right'` | Which corner of the viewport the toggle button sits in.                                                                              |
 | `position`       | `'bottom'` \| `'right'`                                              | `'bottom'`       | Where the panel docks.                                                                                                               |
+| `theme`          | `'system'` \| `'light'` \| `'dark'`                                  | none             | Sets the theme from your app and hides the panel's theme picker. See [Theme](#theme).                                                |
 
 Drag the panel's edge to resize it, or focus the edge and use the arrow keys. The size is saved in `localStorage` too.
 
-The prop types are exported as `SWRDevtoolsProps`, `ButtonPosition` and `PanelPosition`.
+The prop types are exported as `SWRDevtoolsProps`, `ButtonPosition`, `PanelPosition` and `Theme`.
 
 ### `<SWRDevtoolsPanel />`
 
-The panel on its own, with no toggle button and no props. It fills the element you render it in, so give that element a size. Use it to put the devtools in your own layout, such as a sidebar or a tab in another devtools tool.
+The panel on its own, with no toggle button. Its only prop is `theme`, as above. It fills the element you render it in, so give that element a size. Use it to put the devtools in your own layout, such as a sidebar or a tab in another devtools tool.
 
 ```tsx
 import { SWRDevtoolsPanel } from 'swr-devtools-react';
@@ -80,6 +82,16 @@ import { SWRDevtoolsPanel } from 'swr-devtools-react';
     <SWRDevtoolsPanel />
   </div>
 </SWRConfig>;
+```
+
+### Theme
+
+The panel follows your OS or browser's light or dark setting. A picker in its header switches between System, Light and Dark, and the choice is saved in `localStorage`.
+
+If your app or devtools host already has a theme setting, pass `theme` to use it instead. The panel then hides its picker, so the two settings can't disagree:
+
+```tsx
+<SWRDevtoolsPanel theme={isDark ? 'dark' : 'light'} />
 ```
 
 ## Next.js
@@ -231,7 +243,7 @@ Either way, the browser gets the same production bundle. Installing the package 
 
 ## Roadmap
 
-Next up are a TanStack Devtools plugin, observer counts per key, and a light theme that follows the system setting. The [spec](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/docs/SPEC.md) lists what's planned, and the [project board](https://github.com/users/TheFlyer1983/projects/7) shows what's in progress.
+Next up are a TanStack Devtools plugin and observer counts per key. The [spec](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/docs/SPEC.md) lists what's planned, and the [project board](https://github.com/users/TheFlyer1983/projects/7) shows what's in progress.
 
 ## Contributing
 

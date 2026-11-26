@@ -56,6 +56,28 @@ describe('<ShadowHost />', () => {
     expect(host()?.shadowRoot?.querySelector('p')?.textContent).toBe('inside');
   });
 
+  it('gives every colour token a light and a dark value', () => {
+    render(<ShadowHost>{null}</ShadowHost>);
+
+    const css = host()?.shadowRoot?.querySelector('style')?.textContent ?? '';
+    const colours = css.match(/--swr-dt-color-[\w-]+: [^;]+;/g) ?? [];
+    expect(colours.length).toBeGreaterThan(0);
+    for (const declaration of colours) {
+      expect(declaration).toMatch(/: light-dark\(#[\da-f]+, #[\da-f]+\);$/);
+    }
+    // The panel's own colour-scheme would override the one the theme sets.
+    expect(css).not.toMatch(/\.panel-content \{[^}]*color-scheme/);
+  });
+
+  it('sets the colour scheme from the theme wrapper, without giving it a box', () => {
+    render(<ShadowHost>{null}</ShadowHost>);
+
+    const css = host()?.shadowRoot?.querySelector('style')?.textContent ?? '';
+    expect(css).toMatch(/\.theme \{[^}]*display: contents;[^}]*color-scheme: light dark;/);
+    expect(css).toMatch(/\.theme\[data-theme='light'\] \{\s*color-scheme: light;/);
+    expect(css).toMatch(/\.theme\[data-theme='dark'\] \{\s*color-scheme: dark;/);
+  });
+
   it('removes the host when it unmounts', () => {
     const { unmount } = render(<ShadowHost>{null}</ShadowHost>);
     expect(host()).not.toBeNull();

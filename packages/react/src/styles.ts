@@ -5,6 +5,10 @@
  *
  * Design tokens are CSS variables prefixed `--swr-dt-`. Components use the
  * tokens, never raw values, so a later move to Tailwind maps them across.
+ *
+ * Colour tokens hold a light and a dark value in \`light-dark()\`, which
+ * resolves where a token is used. The \`.theme\` wrapper's \`color-scheme\`
+ * picks one: the system setting for \`system\`, or the theme it names.
  */
 export const styles = `
 :host {
@@ -16,20 +20,20 @@ export const styles = `
   unicode-bidi: isolate !important;
 
   /* Colours */
-  --swr-dt-color-bg: #ffffff;
-  --swr-dt-color-surface: #f6f7f9;
-  --swr-dt-color-text: #1c2024;
-  --swr-dt-color-muted: #60646c;
-  --swr-dt-color-border: #e0e1e6;
-  --swr-dt-color-accent: #0969da;
-  --swr-dt-color-accent-text: #ffffff;
+  --swr-dt-color-bg: light-dark(#ffffff, #111113);
+  --swr-dt-color-surface: light-dark(#f6f7f9, #1c1d20);
+  --swr-dt-color-text: light-dark(#1c2024, #edeef0);
+  --swr-dt-color-muted: light-dark(#60646c, #b0b4ba);
+  --swr-dt-color-border: light-dark(#e0e1e6, #363a3f);
+  --swr-dt-color-accent: light-dark(#0969da, #4493f8);
+  --swr-dt-color-accent-text: light-dark(#ffffff, #0d1117);
 
   /* Status colours, designed for SWR's states */
-  --swr-dt-color-loading: #9a6700;
-  --swr-dt-color-validating: #0969da;
-  --swr-dt-color-success: #1f883d;
-  --swr-dt-color-error: #d1242f;
-  --swr-dt-color-idle: #60646c;
+  --swr-dt-color-loading: light-dark(#9a6700, #d29922);
+  --swr-dt-color-validating: light-dark(#0969da, #4493f8);
+  --swr-dt-color-success: light-dark(#1f883d, #3fb950);
+  --swr-dt-color-error: light-dark(#d1242f, #f85149);
+  --swr-dt-color-idle: light-dark(#60646c, #b0b4ba);
 
   /* Spacing */
   --swr-dt-space-1: 4px;
@@ -51,7 +55,21 @@ export const styles = `
 
   /* Layering and elevation */
   --swr-dt-z-index: 99999;
-  --swr-dt-shadow: 0 4px 16px rgb(0 0 0 / 0.16);
+  --swr-dt-shadow: 0 4px 16px light-dark(rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.5));
+}
+
+/* Wraps everything in the shadow root, without a box of its own. */
+.theme {
+  display: contents;
+  color-scheme: light dark;
+}
+
+.theme[data-theme='light'] {
+  color-scheme: light;
+}
+
+.theme[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 /* <SWRDevtoolsPanel /> fills the element the app renders it in. */
@@ -160,7 +178,6 @@ export const styles = `
   min-width: 0;
   min-height: 0;
   height: 100%;
-  color-scheme: light;
   font-family: var(--swr-dt-font-sans);
   font-size: var(--swr-dt-font-size-md);
   line-height: var(--swr-dt-line-height);

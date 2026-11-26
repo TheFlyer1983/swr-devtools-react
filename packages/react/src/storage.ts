@@ -1,6 +1,11 @@
 /** Where the panel docks. */
 export type PanelPosition = 'bottom' | 'right';
 
+/** The panel's colours: following the system setting, or always light or dark. */
+export type Theme = 'system' | 'light' | 'dark';
+
+export const THEMES: readonly Theme[] = ['system', 'light', 'dark'];
+
 /** What the floating panel remembers across reloads. */
 export interface PanelState {
   isOpen: boolean;
@@ -11,6 +16,8 @@ export interface PanelState {
 }
 
 export const STORAGE_KEY = 'swr-devtools-react';
+/** Kept apart from the floating panel's state, because the inline panel uses it too. */
+export const THEME_STORAGE_KEY = 'swr-devtools-react:theme';
 
 export const DEFAULT_HEIGHT = 320;
 export const DEFAULT_WIDTH = 480;
@@ -50,6 +57,26 @@ export function loadPanelState(fallback: PanelState): PanelState {
 export function savePanelState(state: PanelState): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // The panel still works; it just won't remember this across reloads.
+  }
+}
+
+/** Reads the theme the user chose in the panel, or `system` if there's none. */
+export function loadTheme(): Theme {
+  let raw: string | null;
+  try {
+    raw = window.localStorage.getItem(THEME_STORAGE_KEY);
+  } catch {
+    return 'system';
+  }
+  return THEMES.find((theme) => theme === raw) ?? 'system';
+}
+
+/** Saves the user's theme. A failed write is ignored, like `savePanelState`. */
+export function saveTheme(theme: Theme): void {
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   } catch {
     // The panel still works; it just won't remember this across reloads.
   }

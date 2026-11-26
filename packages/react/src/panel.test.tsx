@@ -840,4 +840,29 @@ describe('<SWRDevtoolsPanel />', () => {
     expect(container.querySelector('[data-swr-devtools]')).not.toBeNull();
     expect(panel().queryByRole('button', { name: /open|close/i })).not.toBeInTheDocument();
   });
+
+  it('has a theme picker, which a theme prop replaces', () => {
+    const cache: Cache = new Map();
+    const { rerender } = render(
+      <Wrapper cache={cache}>
+        <SWRDevtoolsPanel />
+      </Wrapper>
+    );
+    const scope = () => panel().getByRole('banner').closest('.theme');
+    expect(scope()).toHaveAttribute('data-theme', 'system');
+
+    fireEvent.change(panel().getByRole('combobox', { name: 'Theme' }), {
+      target: { value: 'light' }
+    });
+    expect(scope()).toHaveAttribute('data-theme', 'light');
+
+    rerender(
+      <Wrapper cache={cache}>
+        <SWRDevtoolsPanel theme="dark" />
+      </Wrapper>
+    );
+    expect(scope()).toHaveAttribute('data-theme', 'dark');
+    expect(panel().queryByRole('combobox', { name: 'Theme' })).not.toBeInTheDocument();
+    localStorage.clear();
+  });
 });
