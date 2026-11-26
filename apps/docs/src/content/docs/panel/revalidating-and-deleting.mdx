@@ -3,7 +3,13 @@ title: Revalidating and deleting
 description: Refetch, delete or clear keys in the SWR cache from the devtools panel.
 ---
 
+import { RevalidatingDemo } from '../../../components/demo/PanelDemos.tsx';
+
 Select a key to get its **Revalidate** and **Delete** buttons. **Clear all** is in the panel's header.
+
+Try them in the demo below. Revalidating `/api/slow` takes two seconds and changes the time it was served. Deleting a key leaves the app with no data until it next fetches.
+
+<RevalidatingDemo client:only="react" />
 
 ## Revalidate
 

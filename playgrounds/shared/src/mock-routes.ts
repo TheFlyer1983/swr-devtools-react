@@ -119,6 +119,14 @@ const routes: [pattern: RegExp, handler: Handler][] = [
     }
   ],
 
+  [
+    /^\/api\/todos\/(\d+)$/,
+    (_url, [id]) => {
+      const todo = todos.find((t) => t.id === Number(id));
+      return todo ? { delay: 150, body: todo } : notFound(`Todo ${id}`);
+    }
+  ],
+
   // Search, requested with an object key: { url: '/api/search', q }
   [
     /^\/api\/search$/,

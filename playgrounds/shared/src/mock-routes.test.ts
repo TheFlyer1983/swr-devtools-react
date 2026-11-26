@@ -83,6 +83,11 @@ describe('resolveMock', () => {
     ).toBe(true);
   });
 
+  it('serves a todo', () => {
+    expect(body('/api/todos/1')).toMatchObject({ id: 1, userId: 1 });
+    expect(get('/api/todos/999').status).toBe(404);
+  });
+
   it('searches users and posts', () => {
     const result = body('/api/search?q=LOVELACE');
     expect(result.users).toEqual([{ id: 1, name: 'Ada Lovelace', username: 'ada' }]);

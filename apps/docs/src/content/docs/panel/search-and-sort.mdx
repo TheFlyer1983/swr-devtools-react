@@ -3,6 +3,12 @@ title: Searching and sorting
 description: Filter and sort the keys in the SWR devtools panel.
 ---
 
+import { SearchAndSortDemo } from '../../../components/demo/PanelDemos.tsx';
+
+Try it in the demo below. Page through the posts to add more keys, then filter for `/api/posts` or change the sort.
+
+<SearchAndSortDemo client:only="react" />
+
 ## Search
 
 Type in **Filter keys** to show only the keys whose label contains the text. Case and surrounding spaces don't matter. The header shows how many keys match, such as "3 of 12 keys".
