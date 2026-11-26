@@ -7,6 +7,7 @@ tag v0.1.0 pushed
   verify   the tagged commit is on main, and the tag matches packages/react/package.json
   check    pnpm check
   publish  pack, check the tarball with publint and arethetypeswrong, then npm publish --provenance
+  docs     deploy the docs site to production, if this version became npm's `latest`
   release  GitHub Release with the version's CHANGELOG.md section as notes
 ```
 
@@ -104,6 +105,25 @@ If the hotfix version is older than npm's current `latest`, for example `0.1.3` 
 
 The publish job decides this just before publishing, after any approval, and publish jobs run one at a time across releases. Because npm can briefly report an old `latest` just after a publish, it also counts the repo's `vX.Y.Z` tags: once `v0.2.0` is tagged, a `0.1.x` hotfix never takes `latest`, even if `0.2.0` hasn't published yet. If the npm registry can't be reached, the job stops rather than guessing: re-run it once the registry responds. The GitHub Release job makes the same check separately when it runs, against the same tags, and release jobs also run one at a time. So a delayed or re-run release job never marks an older version as latest.
 
+## Docs site
+
+The docs at [swr-devtools-react.theflyer1983.dev](https://swr-devtools-react.theflyer1983.dev) describe the version npm installs, so production only changes with a release. [`.github/workflows/docs-deploy.yml`](.github/workflows/docs-deploy.yml) deploys `apps/docs` to Vercel with the Vercel CLI:
+
+| When                                    | Deploys to                                                                                                       | From                     |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| A release publishes to npm's `latest`   | Production                                                                                                       | The release tag          |
+| A merge to `main` that touches the docs | Preview, aliased to [next.swr-devtools-react.theflyer1983.dev](https://next.swr-devtools-react.theflyer1983.dev) | The merge commit         |
+| Run by hand (Actions, Deploy docs)      | Production                                                                                                       | A ref, or npm's `latest` |
+| A pull request                          | A Vercel preview URL (Vercel login needed)                                                                       | The PR branch            |
+
+Prereleases and hotfixes to older lines don't deploy the docs, so production stays on the newest stable version. The release deploy also checks the repo's tags when it runs, so re-running an older release's `docs` job after a newer release skips the deploy. The `release` job runs whether or not the docs deploy succeeds.
+
+Vercel's own Git integration still builds pull request previews, but `apps/docs/vercel.json` turns off its deploys from `main`. It also skips a preview build when nothing under `apps/docs`, `packages/`, `playgrounds/shared` or the lockfile changed since the branch's last successful deployment.
+
+**Docs-only fixes between releases.** Merge the fix, then check it on `next.`. To publish it without a package release, run Deploy docs by hand with the merge commit as the ref. Only do this when nothing unreleased has gone into the docs since the last release. Otherwise wait for the release, or cherry-pick the fix onto a `release/*` branch and deploy that.
+
+**Rolling back.** Run Deploy docs by hand with the previous good ref (an earlier tag), or promote an earlier production deployment in the Vercel dashboard.
+
 ## One-time setup
 
 Done once per repository. Listed here so it can be checked or redone.
@@ -128,12 +148,19 @@ Then, under Publishing access, choose "Require two-factor authentication and dis
 
 **GitHub `npm` environment.** In the repo's Settings, then Environments, create `npm`. Add a deployment tag rule for `v*`, so only version tags can deploy to it. Adding yourself as a required reviewer is optional: it pauses each publish until you approve it.
 
+**Vercel project.** The `swr-devtools-react` project is connected to this repo with Root Directory `apps/docs`, the Astro preset, Node.js 24.x, and the build command `pnpm --filter "@swr-devtools-react/docs..." run build`. Its domains are `swr-devtools-react.theflyer1983.dev` (production) and `next.swr-devtools-react.theflyer1983.dev` (set by the workflow's alias). Deployment Protection stays on for preview URLs; custom domains are public.
+
+**Repository secrets.** `VERCEL_TOKEN` (an access token scoped to the Vercel team), `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` (from the project's settings, or `.vercel/project.json` after `vercel link`).
+
+**Cloudflare DNS.** `CNAME swr-devtools-react` and `CNAME next.swr-devtools-react`, both pointing at the target Vercel shows for the domain, with proxy status DNS only (grey cloud). Proxying through Cloudflare interferes with Vercel's certificates.
+
 **Release branch protection.** In the repo's Settings, then Rules, the "Protect release branches" ruleset covers `release/**` with the same rules as `main`: changes go through PRs, the three CI checks must pass, and the branch can't be force-pushed or deleted.
 
 ## If a step fails
 
 - **verify or check failed.** Nothing was published. Delete the tag, fix the cause on `main`, tag again.
 - **publish failed.** Check the error. A trusted publishing error usually means the npm settings above don't match the workflow file name or environment. Re-run the failed job once fixed.
+- **docs failed after publishing.** The package is on npm and the docs still show the previous release. Re-run only the `docs` job, or run Deploy docs by hand with the tag as the ref. A Vercel error usually means an expired `VERCEL_TOKEN` or changed project settings.
 - **release failed after publishing.** The package is on npm. Re-run only the `release` job. Don't re-run `publish`: npm rejects a version that already exists. If re-running can't fix it, write the release by hand with the version's changelog section as notes:
 
   ```bash
