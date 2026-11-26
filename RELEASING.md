@@ -116,9 +116,9 @@ The docs at [swr-devtools-react.theflyer1983.dev](https://swr-devtools-react.the
 | Run by hand (Actions, Deploy docs)      | Production                                                                                                       | A ref, or npm's `latest` |
 | A pull request                          | A Vercel preview URL (Vercel login needed)                                                                       | The PR branch            |
 
-Prereleases and hotfixes to older lines don't deploy the docs, so production stays on the newest stable version. The `release` job runs whether or not the docs deploy succeeds.
+Prereleases and hotfixes to older lines don't deploy the docs, so production stays on the newest stable version. The release deploy also checks the repo's tags when it runs, so re-running an older release's `docs` job after a newer release skips the deploy. The `release` job runs whether or not the docs deploy succeeds.
 
-Vercel's own Git integration still builds pull request previews, but `apps/docs/vercel.json` turns off its deploys from `main`, and skips preview builds when nothing under `apps/docs`, `packages/`, `playgrounds/shared` or the lockfile changed.
+Vercel's own Git integration still builds pull request previews, but `apps/docs/vercel.json` turns off its deploys from `main`. It also skips a preview build when nothing under `apps/docs`, `packages/`, `playgrounds/shared` or the lockfile changed since the branch's last successful deployment.
 
 **Docs-only fixes between releases.** Merge the fix, then check it on `next.`. To publish it without a package release, run Deploy docs by hand with the merge commit as the ref. Only do this when nothing unreleased has gone into the docs since the last release. Otherwise wait for the release, or cherry-pick the fix onto a `release/*` branch and deploy that.
 
