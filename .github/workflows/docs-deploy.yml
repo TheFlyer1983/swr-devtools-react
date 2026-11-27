@@ -167,8 +167,8 @@ jobs:
           fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed to $url" >> "$GITHUB_STEP_SUMMARY"
-      # Preview URLs need a Vercel login. The custom domain makes main's
-      # preview public, for people trying unreleased changes.
+      # A stable address for main's preview, for people reading about
+      # unreleased changes. Each deployment's own URL changes every run.
       - name: Point next.swr-devtools-react at the preview
         if: needs.plan.outputs.target == 'preview'
         env:
