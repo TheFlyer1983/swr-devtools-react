@@ -161,7 +161,7 @@ jobs:
           if [ "$TARGET" = production ]; then args+=(--prod); fi
           # The CLI prints only the deployment URL to stdout; progress goes to stderr.
           url="$(npx --yes "$VERCEL_CLI" deploy --prebuilt "${args[@]}" --token="$VERCEL_TOKEN")"
-          if ! [[ "$url" =~ ^https://[^[:space:]]+$ ]]; then
+          if ! [[ "$url" =~ ^https://[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$ ]]; then
             echo "::error::Expected a deployment URL from vercel deploy, got: $url"
             exit 1
           fi
