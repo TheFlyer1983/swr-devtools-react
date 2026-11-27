@@ -1,0 +1,12 @@
+---
+title: Known limits
+description: What the SWR devtools can't do yet, and why.
+---
+
+- **Deleting a key** removes it from the cache and tells mounted hooks. A hook using `keepPreviousData` keeps showing its last data until it next fetches, because SWR keeps that copy inside the hook.
+- **Clear all** on SWR 2.5 or later uses SWR's `unload()`, which also cancels in-flight requests and drops `keepPreviousData` copies. On older SWR it deletes keys one by one, with the same limit as above.
+- **Several caches.** Only the nearest `<SWRConfig>`'s cache is shown. Choosing between caches is tracked in [#25](https://github.com/TheFlyer1983/swr-devtools-react/issues/25).
+- **Revalidate needs a mounted hook with a fetcher.** `mutate(key)` refetches through a hook using the key, so Revalidate is disabled for keys no mounted hook uses, such as `useSWRInfinite`'s page keys. It's also disabled for Subscription keys, because `useSWRSubscription` hooks have no fetcher.
+- **Hook counts read SWR internals.** SWR has no public way to count the hooks using a key, so the panel reads SWR's internal list of them. If a future SWR release changes that list, the panel stops showing counts rather than showing wrong ones. Unmounting a hook doesn't write to the cache, so the panel checks for unmounts every 500 ms.
+- **Polling mode.** If the cache object can't be changed, for example because it's frozen, the panel checks it every 250 ms instead of seeing each write. The header shows `(poll)` instead of `(patch)`. States that last less than a check, such as a very fast request, can be missed.
+- **Data that isn't JSON** can't be edited if it has circular references or BigInts. Dates, Maps and similar values can be edited, but applying the edit saves them as plain JSON. See [Editing data](/panel/editing/).

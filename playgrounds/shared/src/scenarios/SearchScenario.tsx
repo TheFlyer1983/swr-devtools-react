@@ -4,11 +4,13 @@ import { Card } from './Card.tsx';
 
 interface SearchResponse {
   q: string;
-  results: string[];
+  total: { users: number; posts: number };
+  users: { id: number; name: string; username: string }[];
+  posts: { id: number; userId: number; title: string }[];
 }
 
 export function SearchScenario() {
-  const [q, setQ] = useState('ap');
+  const [q, setQ] = useState('an');
   const { data, error, isLoading, isValidating } = useSWR<SearchResponse>({
     url: '/api/search',
     q
@@ -22,14 +24,26 @@ export function SearchScenario() {
       error={error}
       actions={
         <input
-          aria-label="Search fruit"
+          aria-label="Search users and posts"
           value={q}
           onChange={(event) => setQ(event.target.value)}
-          placeholder="Search fruit"
+          placeholder="Search users and posts"
         />
       }
     >
-      <p>{data ? data.results.join(', ') || 'No matches' : null}</p>
+      {data ? (
+        <>
+          <p>
+            {data.total.users} user(s): {data.users.map((user) => user.name).join(', ') || 'none'}
+          </p>
+          <p>{data.total.posts} post(s)</p>
+          <ul>
+            {data.posts.map((post) => (
+              <li key={post.id}>{post.title}</li>
+            ))}
+          </ul>
+        </>
+      ) : null}
     </Card>
   );
 }

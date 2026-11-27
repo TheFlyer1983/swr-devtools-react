@@ -133,9 +133,9 @@ describe('cache actions with mounted hooks', () => {
     });
   });
 
-  // Known limit (#15): useSWRInfinite caches each page under its own key, but
-  // only the $inf$ key has a mounted hook. Page keys look like any other key,
-  // so the panel can't disable Revalidate for them.
+  // useSWRInfinite caches each page under its own key, but only the $inf$ key
+  // has a mounted hook. The panel disables Revalidate for page keys by their
+  // hook count (#21).
   describe('with useSWRInfinite', () => {
     function Pages({ fetcher }: { fetcher: (key: string) => Promise<string> }) {
       const { data } = useSWRInfinite((index) => `/api/page/${index}`, fetcher, {

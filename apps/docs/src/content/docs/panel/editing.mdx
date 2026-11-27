@@ -1,0 +1,27 @@
+---
+title: Editing data
+description: Change a key's cached data from the SWR devtools panel.
+---
+
+import { EditingDemo } from '../../../components/demo/PanelDemos.tsx';
+
+Select a key, then press **Edit** in its details. The data tree becomes a text box with the data as JSON.
+
+Try it in the demo below: select `/api/todos/1`, change `completed` or `title`, and apply. The todo above the panel updates straight away.
+
+<EditingDemo client:only="react" />
+
+Change the JSON, then press **Apply** or Ctrl+Enter (⌘+Enter on a Mac). The panel writes the new data to the cache with `mutate(key, data, { revalidate: false })`, so every hook using the key re-renders with it, and SWR doesn't refetch straight away. The next revalidation, such as a focus or an interval, replaces it with fresh data from your fetcher.
+
+Press **Cancel** or Escape to leave without changing anything.
+
+Invalid JSON shows an error under the text box and isn't applied. To clear a key's data, enter `null`.
+
+## Data that isn't plain JSON
+
+SWR data doesn't have to be JSON. The editor handles the difference like this:
+
+- **Dates, Maps, Sets, class instances, `undefined` properties, `NaN` and `Infinity`** can't be written as JSON exactly. The editor warns you, and applying saves them as plain JSON: a Date becomes a string and a Map becomes `{}`. Your app may not expect that, so revalidate the key afterwards if it misbehaves.
+- **Circular references and BigInts** can't be written as JSON at all. Edit is disabled for that key; hover over it to see why.
+
+The text box keeps what you've typed if the key updates while you're editing. Applying overwrites the newer data.

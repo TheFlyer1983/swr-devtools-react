@@ -1,18 +1,13 @@
 import useSWR from 'swr';
+import type { User } from '../fixtures/index.ts';
 import { Card } from './Card.tsx';
 
-interface User {
-  id: number;
-  name: string;
-  role: string;
-}
-
 export function UserScenario() {
-  const { data, error, isLoading, isValidating, mutate } = useSWR<User>('/api/user');
+  const { data, error, isLoading, isValidating, mutate } = useSWR<User>('/api/users/1');
   return (
     <Card
       title="Fast success"
-      swrKey="'/api/user'"
+      swrKey="'/api/users/1'"
       isLoading={isLoading}
       isValidating={isValidating}
       error={error}
@@ -20,7 +15,7 @@ export function UserScenario() {
     >
       {data ? (
         <p>
-          {data.name} ({data.role})
+          {data.name} ({data.role}), {data.company.name}
         </p>
       ) : null}
     </Card>

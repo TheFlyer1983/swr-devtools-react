@@ -1,7 +1,7 @@
 import { act, fireEvent, render } from '@testing-library/react';
 import { SWRConfig, type Cache } from 'swr';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_HEIGHT, DEFAULT_WIDTH, STORAGE_KEY } from './storage.ts';
+import { DEFAULT_HEIGHT, DEFAULT_WIDTH, STORAGE_KEY, THEME_STORAGE_KEY } from './storage.ts';
 import { MIN_SIZE, SWRDevtools, type SWRDevtoolsProps } from './swr-devtools.tsx';
 
 function renderDevtools(props: SWRDevtoolsProps = {}) {
@@ -49,6 +49,29 @@ describe('<SWRDevtools />', () => {
     expect(get('.toggle')).toHaveAttribute('data-position', 'bottom-right');
     expect(get('.toggle')).toHaveAccessibleName('Open SWR Devtools');
     expect(find('.panel')).toBeNull();
+  });
+
+  it('follows the system theme until the user picks one, and remembers it', () => {
+    const { unmount } = renderDevtools({ initialIsOpen: true });
+    expect(get('.theme')).toHaveAttribute('data-theme', 'system');
+    expect(get('select[aria-label="Theme"]')).toHaveValue('system');
+
+    fireEvent.change(get('select[aria-label="Theme"]'), { target: { value: 'dark' } });
+
+    expect(get('.theme')).toHaveAttribute('data-theme', 'dark');
+    unmount();
+    renderDevtools();
+    // The closed toggle uses it too.
+    expect(get('.theme')).toHaveAttribute('data-theme', 'dark');
+    expect(get('.theme')).toContainElement(get('.toggle'));
+  });
+
+  it('uses the theme prop instead of a picker, over a saved choice', () => {
+    localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+    renderDevtools({ initialIsOpen: true, theme: 'light' });
+
+    expect(get('.theme')).toHaveAttribute('data-theme', 'light');
+    expect(find('select[aria-label="Theme"]')).toBeNull();
   });
 
   it('opens a panel docked at the bottom, and closes it again', () => {

@@ -1,0 +1,30 @@
+---
+title: Revalidating and deleting
+description: Refetch, delete or clear keys in the SWR cache from the devtools panel.
+---
+
+import { RevalidatingDemo } from '../../../components/demo/PanelDemos.tsx';
+
+Select a key to get its **Revalidate** and **Delete** buttons. **Clear all** is in the panel's header.
+
+Try them in the demo below. Revalidating `/api/slow` takes two seconds and changes the time it was served. Deleting a key leaves the app with no data until it next fetches.
+
+<RevalidatingDemo client:only="react" />
+
+## Revalidate
+
+Revalidate refetches the key, the same as calling `mutate(key)`. The request goes through the hook that's using the key, with its fetcher, and the status changes to Validating while it runs, or Loading if the key has no data.
+
+It's disabled for keys marked Unused, because with no mounted hook there's no fetcher to call. That includes `useSWRInfinite`'s page keys: revalidate the Infinite key to refetch its pages. It's also disabled for Subscription keys, which have no fetcher. Hover over the button to see why.
+
+## Delete
+
+Delete removes the key from the cache. Hooks using it re-render with no data, and the key's details close. SWR doesn't refetch straight away.
+
+A hook using `keepPreviousData` keeps showing its last data until it next fetches, because SWR keeps that copy inside the hook. See [Known limits](/known-limits/).
+
+## Clear all
+
+Clear all removes every key, including Infinite and Subscription keys, without refetching. It asks first. Press **Clear** to confirm, or **Cancel** or Escape to keep the cache.
+
+On SWR 2.5 or later it uses SWR's `unload()`, which also cancels in-flight requests and drops `keepPreviousData` copies. On older SWR it deletes keys one by one, with the same limit as Delete.

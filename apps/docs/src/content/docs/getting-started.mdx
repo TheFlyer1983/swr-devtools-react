@@ -1,0 +1,74 @@
+---
+title: Getting started
+description: Install swr-devtools-react and add the panel to a React app that uses SWR.
+---
+
+import { Aside, TabItem, Tabs } from '@astrojs/starlight/components';
+
+## Install
+
+<Tabs syncKey="pkg">
+  <TabItem label="npm">
+
+```sh
+npm install --save-dev swr-devtools-react
+```
+
+  </TabItem>
+  <TabItem label="pnpm">
+
+```sh
+pnpm add --save-dev swr-devtools-react
+```
+
+  </TabItem>
+  <TabItem label="Yarn">
+
+```sh
+yarn add --dev swr-devtools-react
+```
+
+  </TabItem>
+  <TabItem label="Bun">
+
+```sh
+bun add --dev swr-devtools-react
+```
+
+  </TabItem>
+</Tabs>
+
+It needs React 18 or 19 and SWR 2 in your app. It's a dev dependency because production builds drop it.
+
+<Aside type="caution" title="When to install it as a regular dependency">
+  Install it with the other dependencies, without `--save-dev`, if you [force it on for
+  staging](/production/#forcing-it-on-eg-staging), or if a Next.js app using the Pages Router runs
+  its server with only production dependencies installed. [Production and
+  staging](/production/#dev-dependency-or-regular-dependency) explains both.
+</Aside>
+
+## Setup
+
+Add `<SWRDevtools />` inside your `<SWRConfig>`. There's no provider or middleware to add.
+
+```tsx
+import { SWRConfig } from 'swr';
+import { SWRDevtools } from 'swr-devtools-react';
+
+export function Root() {
+  return (
+    <SWRConfig value={{ fetcher }}>
+      <App />
+      <SWRDevtools />
+    </SWRConfig>
+  );
+}
+```
+
+A button labelled "SWR" appears in the corner. Click it to open the panel. [Inspecting data](/panel/inspecting-data/) shows what's in it.
+
+The panel shows the cache of the nearest `<SWRConfig>`. If your app has no `<SWRConfig>`, it shows SWR's default global cache, and `<SWRDevtools />` can go anywhere in the tree. With several `<SWRConfig provider>`s, it sees only the nearest one.
+
+The panel renders inside a Shadow DOM, so your app's CSS can't change it and its CSS can't leak into your app.
+
+Using Next.js? [Next.js](/nextjs/) shows where it goes with the App Router and the Pages Router.

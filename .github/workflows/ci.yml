@@ -72,3 +72,5 @@ jobs:
         run: pnpm --filter "./playgrounds/*" --if-present run build
       - name: Check production bundles have no devtools code
         run: node scripts/check-production-bundles.ts
+      - name: Build docs site
+        run: pnpm build:docs

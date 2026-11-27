@@ -24,6 +24,26 @@ export function StatusBadge({ status }: { status: KeyStatus }): ReactElement {
   );
 }
 
+/** Why an unused key is still listed. */
+export const UNUSED_NOTE = 'SWR keeps keys after their hooks unmount.';
+
+/** How many mounted hooks use a key, or "Unused". Nothing when unknown. */
+function HookCount({ hooks }: { hooks: number | undefined }): ReactElement | null {
+  if (hooks === undefined) return null;
+  if (hooks === 0) {
+    return (
+      <span
+        className="hooks"
+        data-unused=""
+        title={`No mounted hook uses this key. ${UNUSED_NOTE}`}
+      >
+        Unused
+      </span>
+    );
+  }
+  return <span className="hooks">{hooks === 1 ? '1 hook' : `${hooks} hooks`}</span>;
+}
+
 export interface KeyListProps {
   entries: CacheEntry[];
   /** The key whose details are showing, if any. */
@@ -32,7 +52,10 @@ export interface KeyListProps {
   onSelect: (key: string | null) => void;
 }
 
-/** The given keys, each with its status and how long ago it was updated. */
+/**
+ * The given keys, each with its status, how many hooks use it and how long
+ * ago it was updated.
+ */
 export function KeyList({ entries, selectedKey, onSelect }: KeyListProps): ReactElement {
   const now = useNow(1000);
 
@@ -43,6 +66,7 @@ export function KeyList({ entries, selectedKey, onSelect }: KeyListProps): React
           key={entry.key}
           className="key-row"
           data-selected={entry.key === selectedKey ? '' : undefined}
+          data-unused={entry.hooks === 0 ? '' : undefined}
         >
           <StatusBadge status={entry.status} />
           {/* Clicking the selected key again hides its details. */}
@@ -56,6 +80,7 @@ export function KeyList({ entries, selectedKey, onSelect }: KeyListProps): React
             {entry.label}
           </button>
           {entry.kind !== 'standard' && <span className="kind">{KIND_NAMES[entry.kind]}</span>}
+          <HookCount hooks={entry.hooks} />
           <time
             className="age"
             dateTime={new Date(entry.updatedAt).toISOString()}

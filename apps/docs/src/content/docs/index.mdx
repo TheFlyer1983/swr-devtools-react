@@ -1,0 +1,39 @@
+---
+title: SWR Devtools
+description: In-app devtools panel for SWR. Inspect, revalidate, edit and delete cache keys.
+template: splash
+head:
+  # Starlight's default would repeat the name: "SWR Devtools | SWR Devtools for React".
+  - tag: title
+    content: SWR Devtools for React
+hero:
+  tagline: In-app devtools panel for SWR. Inspect, revalidate, edit and delete cache keys.
+  actions:
+    - text: Get started
+      link: /getting-started/
+      icon: right-arrow
+    - text: Try the demo
+      link: /demo/
+      variant: minimal
+---
+
+See every key in your [SWR](https://swr.vercel.app) cache, then revalidate, edit or delete it from a floating panel. Inspired by TanStack Query Devtools.
+
+## Features
+
+- Every key in the SWR cache, with a status badge (loading, validating, success, error, idle), how many mounted hooks use it, and the time since it was last updated. Keys no hook uses any more are marked Unused. The list updates live.
+- Array and object keys shown readably. `useSWRInfinite` and `useSWRSubscription` keys are labelled.
+- Search keys by text, and sort by key, status or last updated.
+- A detail view with the full key, any error, and the data as a collapsible JSON tree.
+- Revalidate, edit or delete a key, or clear the whole cache.
+- Renders inside a Shadow DOM, so your app's CSS can't break it and its CSS can't leak into your app.
+- Light and dark themes. It follows the system setting until you pick one in the panel.
+- Renders nothing in production builds, and its code is left out of the browser bundle.
+
+## Roadmap
+
+Next up is a TanStack Devtools plugin. The [spec](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/docs/SPEC.md) lists what's planned, and the [project board](https://github.com/users/TheFlyer1983/projects/7) shows what's in progress.
+
+## Contributing
+
+See [CONTRIBUTING.md](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/CONTRIBUTING.md) for local setup, the playgrounds and how PRs work. swr-devtools-react is [MIT licensed](https://github.com/TheFlyer1983/swr-devtools-react/blob/main/LICENSE).

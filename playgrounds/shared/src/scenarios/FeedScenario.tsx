@@ -1,9 +1,18 @@
 import useSWRInfinite from 'swr/infinite';
 import { Card } from './Card.tsx';
 
+interface FeedItem {
+  id: number;
+  title: string;
+  excerpt: string;
+  author: { id: number; name: string } | null;
+  publishedAt: string;
+  commentCount: number;
+}
+
 interface FeedPage {
   page: number;
-  items: { id: number; text: string }[];
+  items: FeedItem[];
   hasMore: boolean;
 }
 

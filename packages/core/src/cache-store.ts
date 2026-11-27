@@ -1,5 +1,6 @@
 import type { Cache } from 'swr';
 import { createCacheReader, type CacheEntry } from './cache-reader.ts';
+import { readHookCounts } from './hook-counts.ts';
 import { observeCache, type CacheObserverMode } from './observe-cache.ts';
 
 /**
@@ -17,10 +18,16 @@ export interface CacheStore {
   getMode: () => CacheObserverMode;
 }
 
+/** How often, in ms, to check for hooks that unmounted. */
+const HOOK_CHECK_INTERVAL = 500;
+
 /**
  * Creating a store only reads the cache. The patch is installed in
  * `subscribe`, which React calls after committing, so a render that React
  * discards can't leave the cache patched.
+ *
+ * A hook mounting writes to the cache, so the patch sees it. A hook
+ * unmounting writes nothing, so hook counts are also checked on an interval.
  */
 export function createCacheStore(cache: Cache): CacheStore {
   const reader = createCacheReader();
@@ -29,16 +36,32 @@ export function createCacheStore(cache: Cache): CacheStore {
 
   return {
     subscribe: (onChange) => {
-      const observer = observeCache(cache, () => {
+      const refresh = () => {
         entries = reader.read(cache);
         onChange();
-      });
+      };
+      const observer = observeCache(cache, refresh);
       mode = observer.mode;
       // Writes between creating the store and subscribing weren't observed.
       entries = reader.read(cache);
-      return observer.unsubscribe;
+
+      const timer = setInterval(() => {
+        if (hookCountsChanged(entries, readHookCounts(cache))) refresh();
+      }, HOOK_CHECK_INTERVAL);
+
+      return () => {
+        clearInterval(timer);
+        observer.unsubscribe();
+      };
     },
     getSnapshot: () => entries,
     getMode: () => mode
   };
+}
+
+function hookCountsChanged(
+  entries: CacheEntry[],
+  counts: ReadonlyMap<string, number> | undefined
+): boolean {
+  return entries.some((entry) => entry.hooks !== (counts && (counts.get(entry.key) ?? 0)));
 }

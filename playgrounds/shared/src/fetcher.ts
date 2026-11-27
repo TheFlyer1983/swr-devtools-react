@@ -1,6 +1,6 @@
 /**
  * One fetcher for every key shape the playground uses:
- * - string:  '/api/user'
+ * - string:  '/api/users/1'
  * - array:   ['/api/posts', 2]          -> /api/posts?page=2
  * - object:  { url: '/api/search', q }  -> /api/search?q=...
  */
@@ -39,7 +39,7 @@ function toUrl(key: PlaygroundKey): string {
 
 /**
  * Set once on <SWRConfig>. Each hook declares its own data type,
- * e.g. useSWR<User>('/api/user'), so this returns `unknown`.
+ * e.g. useSWR<User>('/api/users/1'), so this returns `unknown`.
  */
 export async function fetcher(key: PlaygroundKey): Promise<unknown> {
   const url = toUrl(key);

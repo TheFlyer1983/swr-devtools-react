@@ -8,4 +8,6 @@ coverage/
 !.env.example
 .next/
 next-env.d.ts
+.astro/
+.vercel/
 .pack/
