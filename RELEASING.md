@@ -114,7 +114,7 @@ The docs at [swr-devtools-react.theflyer1983.dev](https://swr-devtools-react.the
 | A release publishes to npm's `latest`   | Production                                                                                                       | The release tag          |
 | A merge to `main` that touches the docs | Preview, aliased to [next.swr-devtools-react.theflyer1983.dev](https://next.swr-devtools-react.theflyer1983.dev) | The merge commit         |
 | Run by hand (Actions, Deploy docs)      | Production                                                                                                       | A ref, or npm's `latest` |
-| A pull request                          | A Vercel preview URL (Vercel login needed)                                                                       | The PR branch            |
+| A pull request                          | A Vercel preview URL                                                                                             | The PR branch            |
 
 Prereleases and hotfixes to older lines don't deploy the docs, so production stays on the newest stable version. The release deploy also checks the repo's tags when it runs, so re-running an older release's `docs` job after a newer release skips the deploy. The `release` job runs whether or not the docs deploy succeeds.
 
@@ -148,7 +148,7 @@ Then, under Publishing access, choose "Require two-factor authentication and dis
 
 **GitHub `npm` environment.** In the repo's Settings, then Environments, create `npm`. Add a deployment tag rule for `v*`, so only version tags can deploy to it. Adding yourself as a required reviewer is optional: it pauses each publish until you approve it.
 
-**Vercel project.** The `swr-devtools-react` project is connected to this repo with Root Directory `apps/docs`, the Astro preset, Node.js 24.x, and the build command `pnpm --filter "@swr-devtools-react/docs..." run build`. Its domains are `swr-devtools-react.theflyer1983.dev` (production) and `next.swr-devtools-react.theflyer1983.dev` (set by the workflow's alias). Deployment Protection stays on for preview URLs; custom domains are public.
+**Vercel project.** The `swr-devtools-react` project is connected to this repo with Root Directory `apps/docs`, the Astro preset, Node.js 24.x, and the build command `pnpm --filter "@swr-devtools-react/docs..." run build`. Its domains are `swr-devtools-react.theflyer1983.dev` (production) and `next.swr-devtools-react.theflyer1983.dev` (set by the workflow's alias). Vercel Authentication is off under Deployment Protection, so `next.` and preview URLs are public. `next.` isn't attached to the project: Vercel won't connect a preview domain to the production branch, and Production would move it on every release.
 
 **Repository secrets.** `VERCEL_TOKEN` (an access token scoped to the Vercel team), `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` (from the project's settings, or `.vercel/project.json` after `vercel link`).
 

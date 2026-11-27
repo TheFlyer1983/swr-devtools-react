@@ -96,7 +96,7 @@ Like the Next.js playground, it uses the package's built `dist`, so run `pnpm bu
 
 The site has no server, so demos get their data from the playgrounds' mock API (`playgrounds/shared/src/mock-routes.ts`), answered in the browser by `apps/docs/src/components/demo/mock-fetch.ts`.
 
-`pnpm check` typechecks the docs but doesn't build them. CI builds them on every PR, and Vercel posts a preview deployment for PRs that change them (a Vercel login is needed to view it). Merges to `main` update [next.swr-devtools-react.theflyer1983.dev](https://next.swr-devtools-react.theflyer1983.dev). Production only changes with a release: see [RELEASING.md](RELEASING.md#docs-site).
+`pnpm check` typechecks the docs but doesn't build them. CI builds them on every PR, and Vercel posts a preview deployment for PRs that change them. Merges to `main` update [next.swr-devtools-react.theflyer1983.dev](https://next.swr-devtools-react.theflyer1983.dev). Production only changes with a release: see [RELEASING.md](RELEASING.md#docs-site).
 
 ## Making a change
 
