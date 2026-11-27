@@ -1,6 +1,6 @@
 # swr-devtools-react: Specification
 
-Status: draft · Last updated: 2026-11-26
+Status: draft · Last updated: 2026-11-27
 
 ## 1. Problem
 
@@ -28,16 +28,17 @@ Developers building React apps with SWR v2, in Vite/React or Next.js (App Router
 
 ## 4. Decisions
 
-| Decision           | Choice                                                               | Notes                                                                                                                                                                                                                                                                                           |
-| ------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SWR support        | v2 only                                                              |                                                                                                                                                                                                                                                                                                 |
-| Delivery           | Standalone first                                                     | The panel is the product. TanStack Devtools and Vite DevTools are thin adapters added later.                                                                                                                                                                                                    |
-| Styling            | Plain CSS inside a Shadow DOM                                        | No runtime deps. Host styles can't leak in or out. Design tokens are CSS variables so a later switch to Tailwind is mechanical. Tailwind v4 needs a Shadow DOM workaround, so revisit then.                                                                                                     |
-| Next.js            | First-class in MVP                                                   | `'use client'` entry, tested in a Next.js playground                                                                                                                                                                                                                                            |
-| Licence            | MIT                                                                  |                                                                                                                                                                                                                                                                                                 |
-| Repo / npm name    | `swr-devtools-react`                                                 | Check npm availability before first publish.                                                                                                                                                                                                                                                    |
-| Live cache updates | Wrap `set`/`delete` on the existing cache object; poll as a fallback | No user setup. Avoids a custom `provider`, which crashes under StrictMode with infinite/subscription hooks (vercel/swr#2771). See [docs/spikes/cache-observation.md](spikes/cache-observation.md).                                                                                              |
-| Hook counts        | Read SWR's hook registry (`EVENT_REVALIDATORS`) from `swr/_internal` | No user setup, and counts every hook, not only those under a configured `<SWRConfig>`. Undocumented, so any unexpected shape hides counts instead of showing wrong ones. Unmounts don't write to the cache, so counts are rechecked every 500ms. Middleware was rejected: it needs setup (#21). |
+| Decision           | Choice                                                                     | Notes                                                                                                                                                                                                                                                                                           |
+| ------------------ | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SWR support        | v2 only                                                                    |                                                                                                                                                                                                                                                                                                 |
+| Delivery           | Standalone first                                                           | The panel is the product. TanStack Devtools and Vite DevTools are thin adapters added later.                                                                                                                                                                                                    |
+| Styling            | Plain CSS inside a Shadow DOM                                              | No runtime deps. Host styles can't leak in or out. Design tokens are CSS variables so a later switch to Tailwind is mechanical. Tailwind v4 needs a Shadow DOM workaround, so revisit then.                                                                                                     |
+| Next.js            | First-class in MVP                                                         | `'use client'` entry, tested in a Next.js playground                                                                                                                                                                                                                                            |
+| Licence            | MIT                                                                        |                                                                                                                                                                                                                                                                                                 |
+| Repo / npm name    | `swr-devtools-react`                                                       | Check npm availability before first publish.                                                                                                                                                                                                                                                    |
+| Live cache updates | Wrap `set`/`delete` on the existing cache object; poll as a fallback       | No user setup. Avoids a custom `provider`, which crashes under StrictMode with infinite/subscription hooks (vercel/swr#2771). See [docs/spikes/cache-observation.md](spikes/cache-observation.md).                                                                                              |
+| Hook counts        | Read SWR's hook registry (`EVENT_REVALIDATORS`) from `swr/_internal`       | No user setup, and counts every hook, not only those under a configured `<SWRConfig>`. Undocumented, so any unexpected shape hides counts instead of showing wrong ones. Unmounts don't write to the cache, so counts are rechecked every 500ms. Middleware was rejected: it needs setup (#21). |
+| Docs site          | Starlight (Astro) in `apps/docs`, at `swr-devtools-react.theflyer1983.dev` | Mostly written docs with live panel demos as `client:only` React islands. Production deploys with releases that become npm `latest`; `main` deploys to `next.swr-devtools-react.theflyer1983.dev`. Decided in #30 after the #63 spike.                                                          |
 
 ## 5. Package structure
 
@@ -46,12 +47,14 @@ packages/
   core/      Reads the SWR cache, subscribes to changes, runs actions. No UI. Internal at first.
   react/     <SWRDevtoolsPanel /> (panel only) and <SWRDevtools /> (panel + floating toggle).
              Published as `swr-devtools-react`.
-  tanstack/  (v0.2) Registers <SWRDevtoolsPanel /> as a TanStack Devtools plugin.
+  tanstack/  (v0.3) Registers <SWRDevtoolsPanel /> as a TanStack Devtools plugin.
 playgrounds/
   shared/    Scenarios, fetcher, mock API routes and styles both playgrounds use
   vite/      React + Vite + SWR, using the devtools' source
   next/      Next.js App Router and Pages Router + SWR, using the devtools' built dist
-docs/
+apps/
+  docs/      (v0.2) Starlight docs site with live panel demos, using the devtools' built dist
+docs/        This spec and spike notes
 ```
 
 ### Setup
@@ -121,20 +124,29 @@ import { SWRDevtools } from 'swr-devtools-react';
 
 ## 7. Later milestones
 
-**v0.2**
+Milestones are releases we've committed to. Ideas that aren't committed stay in the backlog (open issues with no milestone) until they're scheduled.
 
-- TanStack Devtools plugin (`packages/tanstack`)
+**v0.2: Docs site and quick wins**
+
+- Docs site (#30): Starlight in `apps/docs`, with focused live demos per page (#70)
+- Richer mock API data, shaped like JSONPlaceholder, for the playgrounds and docs demos (#68)
 - Observer count per key, read from SWR's hook registry (#21). Keys with no mounted hook are marked unused, and Revalidate is disabled for them.
-- Trigger loading / trigger error states (needs a spike to confirm hooks re-render correctly)
-- Light/dark theme following system preference, with a picker in the panel. A `theme` prop lets a host such as TanStack Devtools set it instead, which hides the picker.
+- Light/dark theme following system preference, with a picker in the panel (#24). A `theme` prop lets a host such as TanStack Devtools set it instead, which hides the picker.
 
-**v0.3+**
+**v0.3: TanStack plugin and deeper inspection**
 
-- Mutations tab (`useSWRMutation`)
-- Simulate offline
-- Vite DevTools adapter
-- Open panel in a separate window
-- Docs site. The approach is undecided; options are Starlight, Fumadocs, VitePress, or a custom site.
+- TanStack Devtools plugin (#20, `packages/tanstack`)
+- Multiple SWR caches (#25)
+- Trigger loading / trigger error states (#22 spike to confirm hooks re-render correctly, then #23)
+
+**Backlog**
+
+- Mutations tab (`useSWRMutation`, #26)
+- Simulate offline (#27)
+- Vite DevTools adapter (#28)
+- Open panel in a separate window (#29)
+- Drag the toggle button along the screen edge (#40)
+- Revalidate all keys (#42)
 
 ## 8. Tooling (proposed)
 
@@ -143,6 +155,7 @@ import { SWRDevtools } from 'swr-devtools-react';
 - Tests: Vitest + React Testing Library; Playwright smoke tests against the playgrounds later
 - Lint/format: Oxc (`oxlint` for linting, `oxfmt` for formatting)
 - Releases: Changesets
+- Docs: Starlight (Astro), static output with Pagefind search
 - CI: GitHub Actions (lint, typecheck, test, build)
 
 ## 9. Open questions
