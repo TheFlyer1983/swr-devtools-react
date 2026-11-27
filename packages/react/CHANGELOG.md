@@ -1,5 +1,13 @@
 # swr-devtools-react
 
+## 0.2.0
+
+### Minor Changes
+
+- 06d1ba4: The npm page now links to the docs site at https://swr-devtools-react.theflyer1983.dev, and the README links to it too.
+- 8a5ce20: The panel shows how many mounted hooks use each key, in the list and the key's details. Keys no hook uses any more, which SWR keeps in the cache, are marked Unused, and Revalidate is disabled for them, since there's no fetcher to call. That includes `useSWRInfinite`'s page keys. It needs no setup.
+- c655a9a: The panel has a dark theme. It follows the system setting until you pick System, Light or Dark in the panel's header, and remembers that choice. Apps and devtools hosts with their own theme setting can pass `theme` to `<SWRDevtools />` or `<SWRDevtoolsPanel />` instead, which hides the picker.
+
 ## 0.1.2
 
 ### Patch Changes
